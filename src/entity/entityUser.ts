@@ -1,8 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { nanoid } from 'nanoid';
 import { ENUM_ROLES } from '@/utils/enums.ts';
 
 @Entity()
+@Unique(['token'])
 export class User {
   @PrimaryGeneratedColumn()
   id: number | undefined;
