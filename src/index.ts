@@ -1,5 +1,8 @@
-import { DbInit } from '@/database/dbInit.ts';
+import RouteMain from '@/routes/routeMain.ts';
 
-(async () => {
-  await DbInit.initialize();
-})();
+const routeMain = new RouteMain();
+
+export default {
+  port: Bun.env.PORT,
+  fetch: (await routeMain.initialize()).fetch,
+};
