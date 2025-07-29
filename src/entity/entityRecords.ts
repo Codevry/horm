@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { Form } from './entityForm';
 
 @Entity('records')
@@ -9,9 +9,10 @@ export class Records {
   @Column('simple-json')
   data!: Record<string, unknown>;
 
-  @CreateDateColumn({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn({ type: 'datetime', default: () => Date.now() })
   createdAt!: Date;
 
   @ManyToOne(() => Form, form => form.token)
+  @JoinColumn({ referencedColumnName: 'token' })
   form!: Form;
 }
