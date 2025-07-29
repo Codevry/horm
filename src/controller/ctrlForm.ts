@@ -73,4 +73,41 @@ export default class CtrlForm {
       };
     }
   }
+
+  /**
+   * Toggle form active state
+   */
+  async toggleActive(body: any) {
+    try {
+      // check formToken & active status
+      const formToken = body.formToken;
+      const active = body.active || false;
+
+      if (!formToken) throw new Error('formToken is required');
+
+      // get form repository
+      const formRepository = Globals.dataSource.getRepository(Form);
+
+      // find form by token
+      const form = await formRepository.findOneBy({ token: formToken });
+      if (!form) throw new Error('Form not found');
+
+      // update form active state
+      form.isActive = active;
+      await formRepository.save(form);
+
+      // return response
+      return {
+        status: true,
+        message: `Form ${active ? 'enabled' : 'disabled'} successfully`,
+        data: form,
+      };
+    } catch (error: Error | any) {
+      return {
+        status: false,
+        message: 'Failed to update form status',
+        error: error.message || '',
+      };
+    }
+  }
 }
