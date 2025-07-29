@@ -20,4 +20,7 @@ export class Form {
   @ManyToOne(() => User, user => user.token)
   @JoinColumn({ referencedColumnName: 'token' })
   user!: User;
+
+  @Column({ default: true })
+  isActive!: boolean;
 }
