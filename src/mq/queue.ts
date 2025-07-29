@@ -1,15 +1,15 @@
-import { Queue, QueueEvents } from 'bullmq';
+import { type ConnectionOptions, Queue, QueueEvents } from 'bullmq';
 import IORedis from 'ioredis';
 import type { ENUM_JOBS } from '@/utils/enums.ts';
-
-const connection = new IORedis({ db: 1 });
 
 export default class MessageQueue {
   private readonly queue: Queue;
   private readonly name: string;
+  private readonly connection: ConnectionOptions;
 
-  constructor(name: string) {
+  constructor(connection: ConnectionOptions, name: string) {
     this.name = name;
+    this.connection = connection;
     this.queue = new Queue(this.name, { connection });
     this.events();
   }
@@ -28,7 +28,7 @@ export default class MessageQueue {
    * get events of queue
    */
   events() {
-    const queueEvents = new QueueEvents(this.name, { connection });
+    const queueEvents = new QueueEvents(this.name, { connection: this.connection });
 
     queueEvents.on('waiting', ({ jobId }) => {
       console.log(`[Queue ${this.name}] Job ${jobId} waiting`);
