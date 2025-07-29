@@ -25,11 +25,16 @@ export default async (c: Context, next: Next) => {
       where: { token: token.replace('Bearer ', '') },
     });
 
+    // check if a user exists and has a role of admin
     if (!user || user.role !== 'admin')
       return c.json({
         status: false,
         message: 'Invalid token',
       });
-    else await next();
+    // else process further
+    else {
+      c.set('userToken', user.token);
+      await next();
+    }
   }
 };
