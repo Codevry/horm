@@ -1,6 +1,5 @@
+import '@/mq/mqInit';
 import RouteMain from '@/routes/routeMain.ts';
-import Globals from '@/utils/globals.ts';
-import MessageQueue from '@/mq/queue.ts';
 
 declare module 'hono' {
   interface ContextVariableMap {
@@ -8,7 +7,6 @@ declare module 'hono' {
   }
 }
 
-Globals.mqQueueRecord = new MessageQueue('newRecord');
 const routeMain = new RouteMain();
 
 export default {
