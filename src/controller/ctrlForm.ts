@@ -145,4 +145,36 @@ export default class CtrlForm {
       };
     }
   }
+
+  /**
+   * Get form by token
+   */
+  async getByToken(body: any) {
+    try {
+      // get form token
+      const formToken = body.formToken;
+
+      if (!formToken) throw new Error('formToken is required');
+
+      // get form repository
+      const formRepository = Globals.dataSource.getRepository(Form);
+
+      // find form by token
+      const form = await formRepository.findOneBy({ token: formToken });
+      if (!form) throw new Error('Form not found');
+
+      // return response
+      return {
+        status: true,
+        message: 'Form retrieved successfully',
+        data: form,
+      };
+    } catch (error: Error | any) {
+      return {
+        status: false,
+        message: 'Failed to retrieve form',
+        error: error.message || '',
+      };
+    }
+  }
 }
