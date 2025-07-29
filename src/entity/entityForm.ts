@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { nanoid } from 'nanoid';
 import { User } from './entityUser';
 
@@ -18,5 +18,6 @@ export class Form {
   createdAt!: Date;
 
   @ManyToOne(() => User, user => user.token)
+  @JoinColumn({ referencedColumnName: 'token' })
   user!: User;
 }
