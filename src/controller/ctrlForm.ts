@@ -110,4 +110,39 @@ export default class CtrlForm {
       };
     }
   }
+
+  /**
+   * Delete form by token
+   */
+  async delete(body: any) {
+    try {
+      // get form token
+      const formToken = body.formToken;
+
+      if (!formToken) throw new Error('formToken is required');
+
+      // get form repository
+      const formRepository = Globals.dataSource.getRepository(Form);
+
+      // find form by token
+      const form = await formRepository.findOneBy({ token: formToken });
+      if (!form) throw new Error('Form not found');
+
+      // delete form
+      await formRepository.remove(form);
+
+      // return response
+      return {
+        status: true,
+        message: 'Form deleted successfully',
+        data: form,
+      };
+    } catch (error: Error | any) {
+      return {
+        status: false,
+        message: 'Failed to delete form',
+        error: error.message || '',
+      };
+    }
+  }
 }
