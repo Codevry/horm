@@ -43,4 +43,15 @@ route.put('/disable', middlewareAuthAdmin, async c => {
   return c.json(result);
 });
 
+// delete form
+route.delete('/', middlewareAuthAdmin, async c => {
+  const body = await c.req.json();
+
+  const result = await Globals.ctrlForm.delete({
+    formToken: body.formToken,
+  });
+
+  return c.json(result);
+});
+
 export default route;
