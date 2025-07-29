@@ -41,4 +41,36 @@ export default class CtrlForm {
       };
     }
   }
+
+  /**
+   * get all forms sorted by createdAt
+   */
+  async get() {
+    try {
+      // get form repository
+      const formRepository = Globals.dataSource.getRepository(Form);
+
+      // find all forms sorted by createdAt
+      const forms = await formRepository.find({
+        order: {
+          createdAt: 'DESC',
+        },
+      });
+
+      // return response
+      return {
+        status: true,
+        message: 'Forms retrieved successfully',
+        data: forms,
+      };
+
+      // catch any error
+    } catch (error: Error | any) {
+      return {
+        status: false,
+        message: 'Failed to retrieve forms',
+        error: error.message || '',
+      };
+    }
+  }
 }
