@@ -19,4 +19,28 @@ route.get('/', middlewareAuthAdmin, async c => {
   return c.json(result);
 });
 
+// set form active
+route.put('/active', middlewareAuthAdmin, async c => {
+  const body = await c.req.json();
+
+  const result = await Globals.ctrlForm.toggleActive({
+    formToken: body.formToken,
+    active: true,
+  });
+
+  return c.json(result);
+});
+
+// set form inactive
+route.put('/disable', middlewareAuthAdmin, async c => {
+  const body = await c.req.json();
+
+  const result = await Globals.ctrlForm.toggleActive({
+    formToken: body.formToken,
+    active: false,
+  });
+
+  return c.json(result);
+});
+
 export default route;
