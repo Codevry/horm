@@ -12,18 +12,24 @@ interface UserWithToken {
 export default async (c: Context, next: Next) => {
   const token = c.req.header('Authorization');
 
+  // check if token provided
   if (!token) {
-    throw new Error('No token provided');
+    return c.json({
+      status: false,
+      message: 'No token provided',
+    });
+  } else {
+    // else verify the token value
+    const userRepository = Globals.dataSource.getRepository<UserWithToken>(User);
+    const user = await userRepository.findOne({
+      where: { token: token.replace('Bearer ', '') },
+    });
+
+    if (!user || user.role !== 'admin')
+      return c.json({
+        status: false,
+        message: 'Invalid token',
+      });
+    else await next();
   }
-
-  const userRepository = Globals.dataSource.getRepository<UserWithToken>(User);
-  const user = await userRepository.findOne({
-    where: { token },
-  });
-
-  if (!user || user.role !== 'admin') {
-    throw new Error('Unauthorized access');
-  }
-
-  await next();
 };
