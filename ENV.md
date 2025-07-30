@@ -24,4 +24,5 @@ The following environment variables are required for the application:
 3. The `.env` file should not be committed to version control
 
 ### Example
-reference `.env.example`
+
+See [`.env.example`](.env.example) file for reference
