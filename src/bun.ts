@@ -7,7 +7,9 @@ declare module 'bun' {
     SMTP_USER: string;
     SMTP_PASS: string;
     SMTP_FROM: string;
-    SMTP_SECURE: boolean;
-    RECORD_EMAIL_TO: string;
+    SMTP_SECURE: string;
+    NOTIFY_EMAIL: string;
+    NOTIFY_WEBHOOK: string;
+    NOTIFY_CHANNELS: string;
   }
 }
