@@ -1,5 +1,6 @@
 import Globals from '@/utils/globals';
 import { Records } from '@/entity/entityRecords.ts';
+import { ENUM_JOBS } from '@/utils/enums.ts';
 
 export default class CtrlRecords {
   /**
@@ -14,7 +15,7 @@ export default class CtrlRecords {
       // check if name exists
       if (!data || !token) throw new Error('data & formToken are required');
 
-      // check if the form exists & is active
+      // check if the form exists and is active
       const form = await Globals.ctrlForm.getByToken({ formToken: token });
       if (form.error) return form;
       else if (form?.data?.isActive === false)
@@ -28,6 +29,9 @@ export default class CtrlRecords {
 
       // save form
       await recordsRepository.save(record);
+
+      // trigger notification
+      Globals.mqQueueRecord.addJob(ENUM_JOBS.sendRecordNotification, { record, form: form.data }).then();
 
       // return response
       return {
