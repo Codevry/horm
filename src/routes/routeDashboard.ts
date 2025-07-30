@@ -2,7 +2,6 @@ import { Hono } from 'hono';
 import { layout } from '@/views/layout.ts';
 import { formsView } from '@/views/forms.ts';
 import Globals from '@/utils/globals.ts';
-import { formRecordsView } from '@/views/form.ts';
 import { generateHTMLTable } from '@/views/record.ts';
 
 const app = new Hono();
