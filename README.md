@@ -1,15 +1,33 @@
-# horm
+# HORM
+> Html form backend
 
-To install dependencies:
+Horm is basically a backend to help you manage multiple forms and their responses. 
+It is super easy to set up/use and will help you save your HTML form responses on your own server.
 
-```bash
-bun install
-```
+### Features
 
-To run:
+* Host on your own server
+* REST APIs for interaction
+* Admin user for all sensitive operations
+* Create unlimited forms and entries
+* Setup CORS your way (or keep it wildcard)
+* Notification triggers on new record submission
+  * Email
+  * Webhook
 
-```bash
-bun run index.ts
-```
+### Pre-Requisites
 
-This project was created using `bun init` in bun v1.2.19. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+* Redis database (used for keeping track of sending/retrying notification)
+* Bun runtime installed (https://bun.com/)
+* Setup .env file as mentioned in [the ENV.md](ENV.md) file
+
+### Getting Started
+* Install dependencies by `bun install --frozen-lockfile --production`
+* Start the server `bun start`
+* On starting the server, default admin details will be printed on the console
+* Use the `token` for all API operations
+
+### APIs
+
+
+
