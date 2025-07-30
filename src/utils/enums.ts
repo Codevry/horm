@@ -4,10 +4,14 @@ export enum ENUM_ROLES {
 }
 
 export enum ENUM_JOBS {
-  sendWebhook = 'sendWebhook',
-  sendEmail = 'sendEmail',
+  sendRecordNotification = 'sendRecordNotification',
 }
 
 export enum ENUM_QUEUE {
   newRecord = 'newRecord',
+}
+
+export enum ENUM_NOTIFY_TYPE {
+  email = 'email',
+  webhook = 'webhook',
 }
