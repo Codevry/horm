@@ -3,6 +3,7 @@ import { DbInit } from '@/database/dbInit.ts';
 import Globals from '@/utils/globals.ts';
 import routeForm from '@/routes/routeForm.ts';
 import routeRecord from '@/routes/routeRecord.ts';
+import routeDashboard from '@/routes/routeDashboard.ts';
 
 export default class RouteMain {
   private readonly app: Hono;
@@ -31,6 +32,7 @@ export default class RouteMain {
     this.defaultRoutes();
     this.app.route('/forms', routeForm);
     this.app.route('/records', routeRecord);
+    this.app.route('/dashboard', routeDashboard);
     return this.app;
   }
 }
