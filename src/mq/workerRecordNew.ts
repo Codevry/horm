@@ -21,8 +21,6 @@ async function sendWebhook(url: string, data: any) {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-
-    return await response.json();
   } catch (error: any) {
     throw new Error(`Failed to send webhook: ${error.message}`);
   }
