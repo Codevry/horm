@@ -1,6 +1,7 @@
-import { Job, Worker } from 'bullmq';
-import { ENUM_JOBS, type ENUM_QUEUE } from '@/utils/enums.ts';
+import { type ConnectionOptions, Job, Worker } from 'bullmq';
+import { ENUM_JOBS, ENUM_NOTIFY_TYPE, type ENUM_QUEUE } from '@/utils/enums.ts';
 import nodemailer from 'nodemailer';
+import emailNewRecord from '@/mail/emailNewRecord.tsx';
 
 /**
  * send webhook
@@ -33,23 +34,29 @@ async function sendWebhook(url: string, data: any) {
  * @param subject
  * @param body
  */
-async function sendEmail(to: string, subject: string, body: string) {
-  const transporter = nodemailer.createTransport({
+async function sendEmail(to: string, subject: string, body: object) {
+  const transporterOptions: any = {
     host: Bun.env.SMTP_HOST,
     port: Bun.env.SMTP_PORT,
-    secure: Bun.env.SMTP_SECURE,
-    auth: {
+    secure: Bun.env.SMTP_SECURE !== 'false',
+  };
+
+  // if user present then set auth
+  if (Bun.env.SMTP_USER)
+    transporterOptions.auth = {
       user: Bun.env.SMTP_USER,
       pass: Bun.env.SMTP_PASS,
-    },
-  });
+    };
+
+  // create transporter
+  const transporter = nodemailer.createTransport(transporterOptions);
 
   try {
     return await transporter.sendMail({
       from: process.env.SMTP_FROM,
       to,
       subject,
-      text: body,
+      html: await emailNewRecord(body),
     });
   } catch (error: any) {
     throw new Error(`Failed to send email: ${error.message}`);
@@ -59,19 +66,46 @@ async function sendEmail(to: string, subject: string, body: string) {
 /**
  * default function
  * @param queue
+ * @param connection
  */
-export default function (queue: ENUM_QUEUE) {
-  new Worker(queue, async (job: Job) => {
-    const { webhookUrl, data, form } = job.data;
+export default function (queue: ENUM_QUEUE, connection: ConnectionOptions) {
+  new Worker(
+    queue,
+    async (job: Job) => {
+      const result: string[] = [];
 
-    if (job.name === ENUM_JOBS.sendWebhook) {
-      return await sendWebhook(webhookUrl, data);
-    }
+      // get notification channels
+      const notifyChannels = Bun.env.NOTIFY_CHANNELS?.split(',') || [];
 
-    if (job.name === ENUM_JOBS.sendEmail) {
-      return await sendEmail(Bun.env.RECORD_EMAIL_TO, `New record created in form: ${form.name}`, data);
-    }
+      // if the job name is sending record notification
+      if (job.name === ENUM_JOBS.sendRecordNotification) {
+        // webhook
+        if (notifyChannels.includes(ENUM_NOTIFY_TYPE.webhook)) {
+          const { record, form } = job.data;
+          await sendWebhook(Bun.env.NOTIFY_WEBHOOK, {
+            jobId: job.id,
+            jobName: job.name,
+            record,
+            form,
+          });
+          result.push('webhook');
+        }
 
-    throw new Error('Either webhook URL or email details are required');
-  });
+        // email
+        if (notifyChannels.includes(ENUM_NOTIFY_TYPE.email)) {
+          const { record, form } = job.data;
+          await sendEmail(Bun.env.NOTIFY_EMAIL, `New record created in form: ${form.name}`, {
+            jobId: job.id,
+            jobName: job.name,
+            record,
+            form,
+          });
+          result.push('email');
+        }
+      }
+
+      return `Notification sent via ${result.join(',')}`;
+    },
+    { connection },
+  );
 }
