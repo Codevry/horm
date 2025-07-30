@@ -4,7 +4,7 @@ import MessageQueue from '@/mq/queue.ts';
 import WorkerRecordNew from '@/mq/workerRecordNew.ts';
 import { ENUM_QUEUE } from '@/utils/enums.ts';
 
-const connection = new IORedis({ db: 1, maxRetriesPerRequest: null });
+const connection = new IORedis(Bun.env.REDIS_URL, { maxRetriesPerRequest: null });
 
 // --- new record queue
 Globals.mqQueueRecord = new MessageQueue(connection, ENUM_QUEUE.newRecord);
