@@ -1,0 +1,328 @@
+openapi: 3.0.0
+info:
+  title: Horm
+  version: 1.0.0
+  description: ''
+servers:
+  - url: '{{domain}}'
+paths:
+  /forms:
+    parameters: []
+    post:
+      summary: Create Form
+      parameters: []
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+            Date:
+              schema:
+                type: string
+              example: Tue, 29 Jul 2025 06:02:55 GMT
+            Content-Length:
+              schema:
+                type: integer
+              example: '179'
+          description: '200'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                      name:
+                        type: string
+                      user:
+                        type: string
+                      id:
+                        type: integer
+                      createdAt:
+                        type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+    get:
+      summary: Get Forms
+      parameters: []
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+            Date:
+              schema:
+                type: string
+              example: Tue, 29 Jul 2025 06:08:14 GMT
+            Content-Length:
+              schema:
+                type: integer
+              example: '241'
+          description: '200'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        token:
+                          type: string
+                        createdAt:
+                          type: integer
+  /forms/active:
+    parameters: []
+    put:
+      summary: Active Form
+      parameters: []
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+            Date:
+              schema:
+                type: string
+              example: Tue, 29 Jul 2025 07:05:22 GMT
+            Content-Length:
+              schema:
+                type: integer
+              example: '164'
+          description: '200'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      token:
+                        type: string
+                      createdAt:
+                        type: integer
+                      isActive:
+                        type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                formToken:
+                  type: string
+  /forms/disable:
+    parameters: []
+    put:
+      summary: Disable Form
+      parameters: []
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+            Date:
+              schema:
+                type: string
+              example: Tue, 29 Jul 2025 07:06:32 GMT
+            Content-Length:
+              schema:
+                type: integer
+              example: '82'
+          description: '200'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                  message:
+                    type: string
+                  error:
+                    type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                formToken:
+                  type: string
+  /records:
+    parameters: []
+    post:
+      summary: Create Record
+      parameters: []
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+            Date:
+              schema:
+                type: string
+              example: Tue, 29 Jul 2025 07:30:29 GMT
+            Content-Length:
+              schema:
+                type: integer
+              example: '145'
+          description: '200'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          hello:
+                            type: integer
+                      form:
+                        type: string
+                      id:
+                        type: integer
+                      createdAt:
+                        type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                formToken:
+                  type: string
+                data:
+                  type: object
+                  properties:
+                    hello:
+                      type: integer
+  /records/form/{formId}:
+    parameters:
+      - name: formId
+        in: path
+        required: true
+        example: MWGj-xrUmY925Dp3oJwiQ
+        schema:
+          type: string
+    get:
+      summary: Get Records by Form
+      parameters: []
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+            Date:
+              schema:
+                type: string
+              example: Tue, 29 Jul 2025 07:41:30 GMT
+            Content-Length:
+              schema:
+                type: integer
+              example: '121'
+          description: '200'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        data:
+                          type: object
+                          properties:
+                            hello:
+                              type: integer
+                        createdAt:
+                          type: integer
+  /:
+    parameters: []
+    get:
+      summary: Ping
+      parameters: []
+      responses:
+        '200':
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              example: application/json
+            Date:
+              schema:
+                type: string
+              example: Wed, 30 Jul 2025 12:29:23 GMT
+            Content-Length:
+              schema:
+                type: integer
+              example: '45'
+          description: '200'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: boolean
+                  message:
+                    type: string
