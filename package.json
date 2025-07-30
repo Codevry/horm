@@ -15,6 +15,7 @@
     "typescript": "^5"
   },
   "dependencies": {
+    "@react-email/components": "^0.3.2",
     "bullmq": "^5.56.8",
     "hono": "^4.8.9",
     "nanoid": "^5.1.5",
