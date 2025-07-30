@@ -29,5 +29,6 @@ It is super easy to set up/use and will help you save your HTML form responses o
 
 ### APIs
 
-
+* OpenAPI file provided in [openapi.yaml](openapi.yaml)
+* You can copy/paste it on [Swagger Editor](https://editor.swagger.io/) for the GUI view
 
