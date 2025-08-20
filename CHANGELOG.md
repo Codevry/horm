@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.1.2](https://github.com/codevry/horm/compare/v0.1.1...v0.1.2) (2025-08-20)
+
+
+### Bug Fixes
+
+* **package:** adding commit-and-tag-version as dev-dependency ([8346c33](https://github.com/codevry/horm/commit/8346c3346e55c2e76fe93832879c3eabc0c98e26))
+
 ## 0.1.1 (2025-08-20)
 
 
