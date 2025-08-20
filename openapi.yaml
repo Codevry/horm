@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   title: Horm
   version: 1.0.0
-  description: ''
+  description: HTML form saving backend service
 servers:
   - url: '{{domain}}'
 paths:
@@ -49,6 +49,15 @@ paths:
                         type: integer
                       createdAt:
                         type: integer
+              example:
+                status: true
+                message: Form created successfully
+                data:
+                  token: MWGj-xrUmY925Dp3oJwiQ
+                  name: Hello World
+                  user: mrGTPCGW01NKgPK4wfcGQ
+                  id: 1
+                  createdAt: 1753768975607
       requestBody:
         content:
           application/json:
@@ -57,6 +66,8 @@ paths:
               properties:
                 name:
                   type: string
+            example:
+              name: Hello World
     get:
       summary: Get Forms
       parameters: []
@@ -98,6 +109,18 @@ paths:
                           type: string
                         createdAt:
                           type: integer
+              example:
+                status: true
+                message: Forms retrieved successfully
+                data:
+                  - id: 2
+                    name: Hello World
+                    token: DmP6qEeehJ13-0DH-tbgn
+                    createdAt: 1753769280520
+                  - id: 1
+                    name: Hello World
+                    token: MWGj-xrUmY925Dp3oJwiQ
+                    createdAt: 1753768975607
   /forms/active:
     parameters: []
     put:
@@ -141,6 +164,15 @@ paths:
                         type: integer
                       isActive:
                         type: boolean
+              example:
+                status: true
+                message: Form enabled successfully
+                data:
+                  id: 1
+                  name: Hello World
+                  token: MWGj-xrUmY925Dp3oJwiQ
+                  createdAt: 1753768975607
+                  isActive: true
       requestBody:
         content:
           application/json:
@@ -149,6 +181,8 @@ paths:
               properties:
                 formToken:
                   type: string
+            example:
+              formToken: MWGj-xrUmY925Dp3oJwiQ
   /forms/disable:
     parameters: []
     put:
@@ -181,6 +215,10 @@ paths:
                     type: string
                   error:
                     type: string
+              example:
+                status: false
+                message: Failed to update form status
+                error: Form not found
       requestBody:
         content:
           application/json:
@@ -189,6 +227,8 @@ paths:
               properties:
                 formToken:
                   type: string
+            example:
+              formToken: MWGj-xrUmY925Dp3oJwiQ
   /records:
     parameters: []
     post:
@@ -233,6 +273,15 @@ paths:
                         type: integer
                       createdAt:
                         type: integer
+              example:
+                status: true
+                message: Record saved successfully
+                data:
+                  data:
+                    hello: 1
+                  form: MWGj-xrUmY925Dp3oJwiQ
+                  id: 1
+                  createdAt: 1753774229991
       requestBody:
         content:
           application/json:
@@ -246,6 +295,10 @@ paths:
                   properties:
                     hello:
                       type: integer
+            example:
+              formToken: MWGj-xrUmY925Dp3oJwiQ
+              data:
+                hello: 1
   /records/form/{formId}:
     parameters:
       - name: formId
@@ -296,6 +349,14 @@ paths:
                               type: integer
                         createdAt:
                           type: integer
+              example:
+                status: true
+                message: Records retrieved successfully
+                data:
+                  - id: 1
+                    data:
+                      hello: 1
+                    createdAt: 1753774229991
   /:
     parameters: []
     get:
@@ -326,3 +387,6 @@ paths:
                     type: boolean
                   message:
                     type: string
+              example:
+                status: true
+                message: Server is running
