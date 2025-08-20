@@ -4,12 +4,14 @@ import Globals from '@/utils/globals.ts';
 import routeForm from '@/routes/routeForm.ts';
 import routeRecord from '@/routes/routeRecord.ts';
 import routeDashboard from '@/routes/routeDashboard.ts';
+import { logger } from 'hono/logger';
 
 export default class RouteMain {
   private readonly app: Hono;
 
   constructor() {
     this.app = new Hono();
+    this.app.use(logger());
   }
 
   /**
