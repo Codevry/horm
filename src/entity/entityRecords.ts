@@ -9,7 +9,7 @@ export class Records {
   @Column('simple-json')
   data!: Record<string, unknown>;
 
-  @CreateDateColumn({ type: 'datetime', default: () => Date.now() })
+  @CreateDateColumn({ type: 'timestamp', default: () => 'NOW()' })
   createdAt!: Date;
 
   @ManyToOne(() => Form, form => form.token)

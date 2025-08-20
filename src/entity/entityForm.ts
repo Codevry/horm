@@ -14,7 +14,7 @@ export class Form {
   @Column({ default: nanoid() })
   token!: string;
 
-  @CreateDateColumn({ type: 'datetime', default: () => Date.now() })
+  @CreateDateColumn({ type: 'timestamp', default: () => 'NOW()' })
   createdAt!: Date;
 
   @ManyToOne(() => User, user => user.token)
