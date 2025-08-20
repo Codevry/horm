@@ -13,6 +13,7 @@
   "devDependencies": {
     "@types/bun": "latest",
     "@types/nodemailer": "^6.4.17",
+    "commit-and-tag-version": "^12.5.2",
     "prettier": "^3.6.2"
   },
   "peerDependencies": {
@@ -21,7 +22,6 @@
   "dependencies": {
     "@react-email/components": "^0.3.2",
     "bullmq": "^5.56.8",
-    "commit-and-tag-version": "^12.5.2",
     "hono": "^4.8.9",
     "nanoid": "^5.1.5",
     "nodemailer": "^7.0.5",
