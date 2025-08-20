@@ -2,6 +2,7 @@ declare module 'bun' {
   interface Env {
     PORT: number;
     CORS: string;
+    POSTGRES_URL: string;
     REDIS_URL: string;
     SMTP_HOST: string;
     SMTP_PORT: number;
