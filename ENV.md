@@ -25,4 +25,4 @@ The following environment variables are required for the application:
 
 ### Example
 
-See [`.env.example`](.env.example) file for reference
+See [`.env.source.example`](.env.source.example) file for reference
