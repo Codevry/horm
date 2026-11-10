@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.2.0](https://github.com/Codevry/horm/compare/v0.1.3...v0.2.0) (2026-11-10)
+
+
+### Features
+
+* **dashboard:** global and per-form settings, base URL ([bbf163d](https://github.com/Codevry/horm/commit/bbf163df7d21a02e70c467595cbdf2cf77acc369))
+* **dashboard:** redesign as a modern admin UI ([0ceb46c](https://github.com/Codevry/horm/commit/0ceb46c63ff2715f7785a04793745094e573a9e1))
+* **db:** replace postgres with sqlite, add coolify-ready docker setup ([fc5bb12](https://github.com/Codevry/horm/commit/fc5bb12b417679291a7f57ee68f4117d4089e5d9))
+* **notifications:** multiple webhooks per form ([0cb8f26](https://github.com/Codevry/horm/commit/0cb8f2640c768a35297d429f3ead31efc450bc91))
+* **records:** paginate submissions ([91bd433](https://github.com/Codevry/horm/commit/91bd4334cd11d3a64f205438f8915bba17bea22c))
+* **records:** rate limit submissions, reliable notification queue ([f8995d1](https://github.com/Codevry/horm/commit/f8995d101bdd1adb93bf09c7627803e2cb262a0d))
+
+
+### Bug Fixes
+
+* **dashboard:** require admin login, escape rendered HTML, add missing routes ([2022980](https://github.com/Codevry/horm/commit/2022980305c9dbb1d8c9c90b231a25a6053ed32f))
+
 ## [0.1.3](https://github.com/codevry/horm/compare/v0.1.2...v0.1.3) (2025-09-03)
 
 
