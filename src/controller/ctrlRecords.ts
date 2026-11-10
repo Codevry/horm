@@ -85,4 +85,47 @@ export default class CtrlRecords {
       };
     }
   }
+
+  /**
+   * per-form submission stats: total, last submission and a daily histogram of the last `days` days (UTC)
+   */
+  stats(days = 14) {
+    const start = new Date();
+    start.setUTCHours(0, 0, 0, 0);
+    start.setUTCDate(start.getUTCDate() - (days - 1));
+
+    const stats = new Map<string, FormStats>();
+    const get = (token: string) => {
+      let s = stats.get(token);
+      if (!s) stats.set(token, (s = { total: 0, last: null, daily: new Array(days).fill(0) }));
+      return s;
+    };
+
+    const totals = Globals.db
+      .query<
+        { formToken: string; total: number; last: string },
+        []
+      >('SELECT formToken, COUNT(*) AS total, MAX(createdAt) AS last FROM records GROUP BY formToken')
+      .all();
+    for (const row of totals) Object.assign(get(row.formToken), { total: row.total, last: new Date(row.last) });
+
+    const daily = Globals.db
+      .query<{ formToken: string; day: string; count: number }, [string]>(
+        `SELECT formToken, substr(createdAt, 1, 10) AS day, COUNT(*) AS count
+         FROM records WHERE createdAt >= ? GROUP BY formToken, day`,
+      )
+      .all(start.toISOString());
+    for (const row of daily) {
+      const index = Math.round((Date.parse(row.day) - start.getTime()) / 86_400_000);
+      if (index >= 0 && index < days) get(row.formToken).daily[index] = row.count;
+    }
+
+    return { days, start, stats, empty: (): FormStats => ({ total: 0, last: null, daily: new Array(days).fill(0) }) };
+  }
+}
+
+export interface FormStats {
+  total: number;
+  last: Date | null;
+  daily: number[];
 }
