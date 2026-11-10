@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.3.0](https://github.com/Codevry/horm/compare/v0.2.0...v0.3.0) (2026-11-10)
+
+
+### Features
+
+* require ADMIN_TOKEN env, simpler website snippet ([02e53d2](https://github.com/Codevry/horm/commit/02e53d29a86f36a8134c96ce5a85fc701c2cedc3))
+
 ## [0.2.0](https://github.com/Codevry/horm/compare/v0.1.3...v0.2.0) (2026-11-10)
 
 
