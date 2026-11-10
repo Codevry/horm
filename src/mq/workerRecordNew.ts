@@ -1,7 +1,8 @@
-import { type ConnectionOptions, Job, Worker } from 'bullmq';
+import { type ConnectionOptions, Job, UnrecoverableError, Worker } from 'bullmq';
 import { ENUM_JOBS, ENUM_NOTIFY_TYPE, type ENUM_QUEUE } from '@/utils/enums.ts';
 import nodemailer from 'nodemailer';
 import emailNewRecord from '@/mail/emailNewRecord.tsx';
+import { notifyChannels } from '@/mq/notify.ts';
 
 /**
  * send webhook
@@ -35,7 +36,7 @@ async function sendWebhook(url: string, data: any) {
 async function sendEmail(to: string, subject: string, body: object) {
   const transporterOptions: any = {
     host: Bun.env.SMTP_HOST,
-    port: Bun.env.SMTP_PORT,
+    port: Number(Bun.env.SMTP_PORT) || 587,
     secure: Bun.env.SMTP_SECURE !== 'false',
   };
 
@@ -66,43 +67,41 @@ async function sendEmail(to: string, subject: string, body: object) {
  * @param queue
  * @param connection
  */
+/**
+ * send one notification for a new record; config errors are not retried
+ */
+async function notify(channel: ENUM_NOTIFY_TYPE, job: Job) {
+  const { record, form } = job.data;
+  const payload = { jobId: job.id, jobName: job.name, record, form };
+
+  if (channel === ENUM_NOTIFY_TYPE.webhook) {
+    if (!Bun.env.NOTIFY_WEBHOOK) throw new UnrecoverableError('NOTIFY_WEBHOOK is not set');
+    await sendWebhook(Bun.env.NOTIFY_WEBHOOK, payload);
+  } else if (channel === ENUM_NOTIFY_TYPE.email) {
+    if (!Bun.env.NOTIFY_EMAIL || !Bun.env.SMTP_HOST)
+      throw new UnrecoverableError('NOTIFY_EMAIL and SMTP_HOST must be set to send emails');
+    await sendEmail(Bun.env.NOTIFY_EMAIL, `New record created in form: ${form.name}`, payload);
+  } else {
+    throw new UnrecoverableError(`Unknown notification channel: ${channel}`);
+  }
+}
+
+/**
+ * default function
+ * @param queue
+ * @param connection
+ */
 export default function (queue: ENUM_QUEUE, connection: ConnectionOptions) {
   new Worker(
     queue,
     async (job: Job) => {
-      const result: string[] = [];
+      if (job.name !== ENUM_JOBS.sendRecordNotification) return 'Ignored';
 
-      // get notification channels
-      const notifyChannels = Bun.env.NOTIFY_CHANNELS?.split(',') || [];
+      // jobs queued by older versions carry no channel: send to every enabled channel
+      const channels: ENUM_NOTIFY_TYPE[] = job.data.channel ? [job.data.channel] : notifyChannels();
+      for (const channel of channels) await notify(channel, job);
 
-      // if the job name is sending record notification
-      if (job.name === ENUM_JOBS.sendRecordNotification) {
-        // webhook
-        if (notifyChannels.includes(ENUM_NOTIFY_TYPE.webhook)) {
-          const { record, form } = job.data;
-          await sendWebhook(Bun.env.NOTIFY_WEBHOOK, {
-            jobId: job.id,
-            jobName: job.name,
-            record,
-            form,
-          });
-          result.push('webhook');
-        }
-
-        // email
-        if (notifyChannels.includes(ENUM_NOTIFY_TYPE.email)) {
-          const { record, form } = job.data;
-          await sendEmail(Bun.env.NOTIFY_EMAIL, `New record created in form: ${form.name}`, {
-            jobId: job.id,
-            jobName: job.name,
-            record,
-            form,
-          });
-          result.push('email');
-        }
-      }
-
-      return `Notification sent via ${result.join(',')}`;
+      return `Notification sent via ${channels.join(',')}`;
     },
     { connection },
   );

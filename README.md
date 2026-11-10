@@ -11,9 +11,10 @@ It is super easy to set up/use and will help you save your HTML form responses o
 * Admin user for all sensitive operations
 * Create unlimited forms and entries
 * Setup CORS your way (or keep it wildcard)
-* Notification triggers on new record submission
+* Notification triggers on new record submission (retried with backoff, one job per channel)
   * Email
   * Webhook
+* Rate limiting and size limits on public form submissions
 
 ### Installation
 
@@ -40,7 +41,7 @@ It is super easy to set up/use and will help you save your HTML form responses o
 ##### Pre-Requisites
 
 * Clone the project
-* Redis database (used for keeping track of sending/retrying notification)
+* Redis (optional): queues email/webhook notifications and retries them; without it notifications are off
 * Bun runtime installed (https://bun.com/)
 * Setup .env file as mentioned in [the ENV.md](ENV.md) file
 

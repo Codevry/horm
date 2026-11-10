@@ -7,5 +7,5 @@ export default class Globals {
   static db: Database;
   static ctrlForm = new CtrlForm();
   static ctrlRecords = new CtrlRecords();
-  static mqQueueRecord: MessageQueue;
+  static mqQueueRecord: MessageQueue | null = null;
 }

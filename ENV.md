@@ -6,8 +6,14 @@ The following environment variables are required for the application:
 |-----------------|--------|--------------------------------------------------------|
 | PORT            | number | The port number on which the server will listen        |
 | CORS            | string | CORS configuration for allowed origins                 |
-| REDIS_URL       | string | Connection URL for Redis server                        |
+| REDIS_URL       | string | Redis connection URL. Optional: needed for email/webhook notifications; also shares rate-limit counters between instances |
 | SQLITE_PATH     | string | Path of the SQLite database file (default `data/horm.sqlite`, created if missing) |
+| RATE_LIMIT_MAX  | number | Form submissions allowed per IP per window (default `10`, `0` disables) |
+| RATE_LIMIT_WINDOW | number | Rate-limit window in seconds (default `60`)                         |
+| TRUST_PROXY     | string | `true` when behind a reverse proxy, to read the visitor IP from `X-Forwarded-For` |
+| MAX_SUBMISSION_KB | number | Largest accepted submission body in KB (default `100`)              |
+| NOTIFY_ATTEMPTS | number | Tries per notification before giving up (default `5`)                  |
+| NOTIFY_RETRY_DELAY | number | Seconds before the first retry; doubles each time (default `30`)    |
 | SMTP_HOST       | string | SMTP server hostname for email delivery                |
 | SMTP_PORT       | number | SMTP server port number                                |
 | SMTP_USER       | string | SMTP authentication username                           |

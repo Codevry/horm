@@ -7,6 +7,12 @@ All variables are optional. The SQLite database is stored on the `horm-data` vol
 | PORT                   | number | Host port to publish the app on for local runs (default `9988`)    |
 | SERVICE_PASSWORD_REDIS | string | Redis password inside the stack (Coolify generates it; default `horm`) |
 | CORS                   | string | Comma-separated allowed origins for form submissions (default `*`) |
+| RATE_LIMIT_MAX         | number | Form submissions allowed per IP per window (default `10`, `0` disables) |
+| RATE_LIMIT_WINDOW      | number | Rate-limit window in seconds (default `60`)                        |
+| TRUST_PROXY            | string | `true` behind a reverse proxy: read the visitor IP from `X-Forwarded-For` (compose default `true`, `false` for local runs) |
+| MAX_SUBMISSION_KB      | number | Largest accepted submission body in KB (default `100`)             |
+| NOTIFY_ATTEMPTS        | number | Tries per notification before giving up (default `5`)              |
+| NOTIFY_RETRY_DELAY     | number | Seconds before the first retry; doubles each time (default `30`)   |
 | SMTP_HOST              | string | SMTP server hostname for email delivery                            |
 | SMTP_PORT              | number | SMTP server port number                                            |
 | SMTP_USER              | string | SMTP authentication username                                       |

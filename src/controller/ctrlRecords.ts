@@ -1,6 +1,6 @@
 import Globals from '@/utils/globals.ts';
 import { type RecordRow, toRecord } from '@/entity/entityRecords.ts';
-import { ENUM_JOBS } from '@/utils/enums.ts';
+import { enqueueRecordNotifications } from '@/mq/notify.ts';
 
 export default class CtrlRecords {
   /**
@@ -31,7 +31,9 @@ export default class CtrlRecords {
       const record = { ...toRecord(row), form: token };
 
       // trigger notification
-      Globals.mqQueueRecord.addJob(ENUM_JOBS.sendRecordNotification, { record, form: form.data }).then();
+      enqueueRecordNotifications(record, form.data).catch(error =>
+        console.error('[Queue] failed to queue notification:', error.message),
+      );
 
       // return response
       return {
