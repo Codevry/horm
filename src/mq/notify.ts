@@ -32,6 +32,8 @@ export async function enqueueRecordNotifications(record: unknown, form: Form) {
   if (channels.includes(ENUM_NOTIFY_TYPE.webhook))
     for (const url of webhooks) jobs.push({ channel: ENUM_NOTIFY_TYPE.webhook, target: url });
 
+  // receivers get the form's public details, not its settings (other webhook URLs / recipients)
+  const { settings: _settings, ...publicForm } = form;
   for (const job of jobs)
-    await Globals.mqQueueRecord.addJob(ENUM_JOBS.sendRecordNotification, { ...job, record, form });
+    await Globals.mqQueueRecord.addJob(ENUM_JOBS.sendRecordNotification, { ...job, record, form: publicForm });
 }
