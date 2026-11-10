@@ -1,4 +1,4 @@
-import { User } from '@/entity/entityUser.ts';
+import { toUser, type User, type UserRow } from '@/entity/entityUser.ts';
 import { ENUM_ROLES } from '@/utils/enums.ts';
 import Globals from '@/utils/globals.ts';
 
@@ -9,7 +9,10 @@ export async function findAdminByToken(token: string | undefined | null): Promis
   const value = token?.replace(/^Bearer\s+/i, '').trim();
   if (!value) return null;
 
-  const user = await Globals.dataSource.getRepository(User).findOne({ where: { token: value } });
-  if (!user || user.role !== ENUM_ROLES.ADMIN || user.isActive === false) return null;
+  const row = Globals.db.query<UserRow, [string]>('SELECT * FROM users WHERE token = ?').get(value);
+  if (!row) return null;
+
+  const user = toUser(row);
+  if (user.role !== ENUM_ROLES.ADMIN || !user.isActive) return null;
   return user;
 }

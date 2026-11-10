@@ -30,7 +30,7 @@ export default class RouteMain {
    * initialize routes
    */
   async initialize() {
-    Globals.dataSource = await DbInit.initialize();
+    Globals.db = DbInit.initialize();
     this.defaultRoutes();
     this.app.route('/forms', routeForm);
     this.app.route('/records', routeRecord);

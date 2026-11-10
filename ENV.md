@@ -7,6 +7,7 @@ The following environment variables are required for the application:
 | PORT            | number | The port number on which the server will listen        |
 | CORS            | string | CORS configuration for allowed origins                 |
 | REDIS_URL       | string | Connection URL for Redis server                        |
+| SQLITE_PATH     | string | Path of the SQLite database file (default `data/horm.sqlite`, created if missing) |
 | SMTP_HOST       | string | SMTP server hostname for email delivery                |
 | SMTP_PORT       | number | SMTP server port number                                |
 | SMTP_USER       | string | SMTP authentication username                           |

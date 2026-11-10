@@ -1,0 +1,61 @@
+# HORM - app + redis, data stored in sqlite on a named volume.
+#
+# Coolify: New Resource -> this Git repository -> Build Pack "Docker Compose"
+#          (default compose location /docker-compose.yaml works as-is).
+#   SERVICE_FQDN_APP_9988   -> Coolify generates a domain and routes it to port 9988 of the app
+#   SERVICE_PASSWORD_REDIS  -> Coolify generates a random redis password
+#   Set SMTP_* / NOTIFY_* / CORS in Coolify's "Environment Variables" tab.
+#
+# Locally: `docker compose up` (docker-compose.override.yml publishes the port).
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - SERVICE_FQDN_APP_9988
+      - NODE_ENV=production
+      - PORT=9988
+      - SQLITE_PATH=/app/data/horm.sqlite
+      - REDIS_URL=redis://default:${SERVICE_PASSWORD_REDIS:-horm}@redis:6379
+      - CORS=${CORS:-*}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - SMTP_FROM=${SMTP_FROM:-}
+      - SMTP_SECURE=${SMTP_SECURE:-false}
+      - NOTIFY_EMAIL=${NOTIFY_EMAIL:-}
+      - NOTIFY_WEBHOOK=${NOTIFY_WEBHOOK:-}
+      - NOTIFY_CHANNELS=${NOTIFY_CHANNELS:-}
+    volumes:
+      - horm-data:/app/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:9988/health > /dev/null || exit 1']
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:8.2-alpine
+    environment:
+      - REDIS_PASSWORD=${SERVICE_PASSWORD_REDIS:-horm}
+    command: ['sh', '-c', 'exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD"']
+    volumes:
+      - horm-redis-data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'redis-cli -a "$$REDIS_PASSWORD" --no-auth-warning ping | grep PONG']
+      interval: 5s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+
+volumes:
+  horm-data:
+  horm-redis-data:

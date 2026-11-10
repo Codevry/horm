@@ -1,5 +1,5 @@
-import Globals from '@/utils/globals';
-import { Records } from '@/entity/entityRecords.ts';
+import Globals from '@/utils/globals.ts';
+import { type RecordRow, toRecord } from '@/entity/entityRecords.ts';
 import { ENUM_JOBS } from '@/utils/enums.ts';
 
 export default class CtrlRecords {
@@ -21,14 +21,14 @@ export default class CtrlRecords {
       else if (form?.data?.isActive === false)
         throw new Error('Form is disabled. Please enable the form to create a record');
 
-      // create a new form
-      const recordsRepository = Globals.dataSource.getRepository(Records);
-      const record = new Records();
-      record.data = data;
-      record.form = token;
-
-      // save form
-      await recordsRepository.save(record);
+      // save the record
+      const row = Globals.db
+        .query<
+          RecordRow,
+          [string, string, string]
+        >('INSERT INTO records (data, createdAt, formToken) VALUES (?, ?, ?) RETURNING *')
+        .get(JSON.stringify(data), new Date().toISOString(), token)!;
+      const record = { ...toRecord(row), form: token };
 
       // trigger notification
       Globals.mqQueueRecord.addJob(ENUM_JOBS.sendRecordNotification, { record, form: form.data }).then();
@@ -65,20 +65,11 @@ export default class CtrlRecords {
       const form = await Globals.ctrlForm.getByToken({ formToken: token });
       if (form.error) return form;
 
-      // get a record repository
-      const recordsRepository = Globals.dataSource.getRepository(Records);
-
       // find all records for the form sorted by createdAt
-      const records = await recordsRepository.find({
-        where: {
-          form: {
-            token,
-          },
-        },
-        order: {
-          createdAt: 'DESC',
-        },
-      });
+      const records = Globals.db
+        .query<RecordRow, [string]>('SELECT * FROM records WHERE formToken = ? ORDER BY createdAt DESC, id DESC')
+        .all(token)
+        .map(toRecord);
 
       // return response
       return {
