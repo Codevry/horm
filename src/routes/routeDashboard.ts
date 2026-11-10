@@ -84,6 +84,11 @@ const systemStatus = (c: Context): SystemStatus => {
 };
 
 const str = (v: unknown) => (Array.isArray(v) ? String(v[0] ?? '') : String(v ?? ''));
+const lines = (v: string) =>
+  v
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
 const list = (v: unknown) => (Array.isArray(v) ? v : v === undefined ? [] : [v]).map(x => String(x));
 
 // --- public: static assets (css, fonts)
@@ -209,7 +214,7 @@ app.post('/settings', async c => {
   const draftNotify = {
     channels: list(body['notify.channels']),
     email: str(body['notify.email']),
-    webhook: str(body['notify.webhook']),
+    webhooks: str(body['notify.webhooks']),
   };
   const url = attempt(() => validateBaseUrl(str(body.baseUrl)));
   const rate = attempt(() => validateRateLimit(draftRate));
@@ -220,7 +225,11 @@ app.post('/settings', async c => {
     const draft = {
       baseUrl: str(body.baseUrl),
       rateLimit: { max: Number(draftRate.max), window: Number(draftRate.window) },
-      notify: { ...draftNotify, channels: draftNotify.channels as ENUM_NOTIFY_TYPE[] },
+      notify: {
+        ...draftNotify,
+        channels: draftNotify.channels as ENUM_NOTIFY_TYPE[],
+        webhooks: lines(draftNotify.webhooks),
+      },
     };
     return page(c, 'Settings', globalSettingsView(draft, systemStatus(c), { errors }), 'settings', 400);
   }
@@ -258,7 +267,7 @@ app.post('/forms/:token/settings', async c => {
   const draftNotify = {
     channels: list(body['notify.channels']),
     email: str(body['notify.email']),
-    webhook: str(body['notify.webhook']),
+    webhooks: str(body['notify.webhooks']),
   };
 
   try {
@@ -284,7 +293,11 @@ app.post('/forms/:token/settings', async c => {
         rateLimit: rateMode === 'custom' ? { max: Number(draftRate.max), window: Number(draftRate.window) } : undefined,
         notify:
           notifyMode === 'custom'
-            ? { ...draftNotify, channels: draftNotify.channels as ENUM_NOTIFY_TYPE[] }
+            ? {
+                ...draftNotify,
+                channels: draftNotify.channels as ENUM_NOTIFY_TYPE[],
+                webhooks: lines(draftNotify.webhooks),
+              }
             : undefined,
       },
     });

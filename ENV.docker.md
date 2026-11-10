@@ -21,7 +21,7 @@ All variables are optional. The SQLite database is stored on the `horm-data` vol
 | SMTP_FROM              | string | Default sender email address                                       |
 | SMTP_SECURE            | string | Enable/disable secure SMTP connection ('true'/'false')             |
 | NOTIFY_EMAIL           | string | Email address for notifications                                    |
-| NOTIFY_WEBHOOK         | string | Webhook URL for notifications                                      |
+| NOTIFY_WEBHOOK         | string | Webhook URL(s) for notifications, comma-separated |
 | NOTIFY_CHANNELS        | string | Comma-separated list of notification channels (`email,webhook`)    |
 
 ## Setup Instructions

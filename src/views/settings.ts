@@ -2,7 +2,12 @@ import { escapeHtml } from '@/utils/html.ts';
 import { icon } from '@/views/icons.ts';
 import { ENUM_NOTIFY_TYPE } from '@/utils/enums.ts';
 import type { Form } from '@/entity/entityForm.ts';
-import type { GlobalSettings, NotifySettings, RateLimitSettings } from '@/entity/entitySettings.ts';
+import {
+  MAX_WEBHOOKS,
+  type GlobalSettings,
+  type NotifySettings,
+  type RateLimitSettings,
+} from '@/entity/entitySettings.ts';
 
 export type FieldErrors = Record<string, string>;
 
@@ -30,7 +35,13 @@ export const describeRate = (r: RateLimitSettings) =>
 export const describeNotify = (n: NotifySettings) => {
   if (!n.channels.length) return 'Off';
   return n.channels
-    .map(c => (c === ENUM_NOTIFY_TYPE.email ? `email to ${n.email}` : `webhook to ${n.webhook}`))
+    .map(c =>
+      c === ENUM_NOTIFY_TYPE.email
+        ? `email to ${n.email}`
+        : n.webhooks.length === 1
+          ? `webhook to ${n.webhooks[0]}`
+          : `${n.webhooks.length} webhooks`,
+    )
     .join(' · ');
 };
 
@@ -71,11 +82,11 @@ function notifyFields(n: NotifySettings, errors: FieldErrors, smtp: boolean, red
     <div class="channel">
       <label class="check"><input type="checkbox" name="notify.channels" value="webhook"${on(ENUM_NOTIFY_TYPE.webhook)} /> Webhook</label>
       <div class="field">
-        <label for="${prefix}n-webhook" class="sr-only">Webhook URL</label>
-        <input class="input mono" id="${prefix}n-webhook" name="notify.webhook" type="url"
-          placeholder="https://hooks.example.com/horm" value="${escapeHtml(n.webhook)}"${invalid(errors, 'notify.webhook')} />
-        ${err(errors, 'notify.webhook')}
-        <p class="hint">Receives a JSON POST for every submission. Failed deliveries are retried.</p>
+        <label for="${prefix}n-webhooks" class="sr-only">Webhook URLs, one per line</label>
+        <textarea class="input mono textarea" id="${prefix}n-webhooks" name="notify.webhooks" rows="${Math.min(MAX_WEBHOOKS, Math.max(2, n.webhooks.length + 1))}"
+          spellcheck="false" placeholder="https://hooks.example.com/horm&#10;https://api.example.com/new-lead"${invalid(errors, 'notify.webhooks')}>${escapeHtml(n.webhooks.join('\n'))}</textarea>
+        ${err(errors, 'notify.webhooks')}
+        <p class="hint">One URL per line, up to ${MAX_WEBHOOKS}. Each gets a JSON POST for every submission and is retried on its own if it fails.</p>
       </div>
     </div>
     ${redis ? '' : '<p class="hint warn">Redis isn\'t configured (REDIS_URL), so no notifications are sent.</p>'}`;

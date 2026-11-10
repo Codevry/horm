@@ -1,6 +1,13 @@
 import Globals from '@/utils/globals.ts';
 import { ENUM_NOTIFY_TYPE } from '@/utils/enums.ts';
-import type { FormSettings, GlobalSettings, NotifySettings, RateLimitSettings } from '@/entity/entitySettings.ts';
+import {
+  MAX_WEBHOOKS,
+  normalizeNotify,
+  type FormSettings,
+  type GlobalSettings,
+  type NotifySettings,
+  type RateLimitSettings,
+} from '@/entity/entitySettings.ts';
 import type { Form } from '@/entity/entityForm.ts';
 
 const CHANNELS = Object.values(ENUM_NOTIFY_TYPE) as string[];
@@ -24,7 +31,10 @@ export function envDefaults(): GlobalSettings {
         .map(c => c.trim().toLowerCase())
         .filter((c): c is ENUM_NOTIFY_TYPE => CHANNELS.includes(c)),
       email: Bun.env.NOTIFY_EMAIL ?? '',
-      webhook: Bun.env.NOTIFY_WEBHOOK ?? '',
+      webhooks: (Bun.env.NOTIFY_WEBHOOK ?? '')
+        .split(',')
+        .map(u => u.trim())
+        .filter(Boolean),
     },
   };
 }
@@ -81,7 +91,7 @@ export function validateRateLimit(input: { max: unknown; window: unknown }): Rat
   return { max, window };
 }
 
-export function validateNotify(input: { channels: unknown; email: unknown; webhook: unknown }): NotifySettings {
+export function validateNotify(input: { channels: unknown; email: unknown; webhooks: unknown }): NotifySettings {
   const channels = (Array.isArray(input.channels) ? input.channels : [input.channels])
     .map(c =>
       String(c ?? '')
@@ -94,24 +104,31 @@ export function validateNotify(input: { channels: unknown; email: unknown; webho
     .split(',')
     .map(e => e.trim())
     .filter(Boolean);
-  const webhook = String(input.webhook ?? '').trim();
+
+  // one URL per line (commas also accepted), duplicates dropped
+  const webhooks = (Array.isArray(input.webhooks) ? input.webhooks.join('\n') : String(input.webhooks ?? ''))
+    .split(/[\n,]/)
+    .map(u => u.trim())
+    .filter((u, i, all) => u && all.indexOf(u) === i);
 
   if (email.some(e => !EMAIL.test(e)))
     throw new SettingsError('notify.email', 'Enter valid email addresses, separated by commas.');
-  if (webhook) {
+  for (const webhook of webhooks) {
     let url: URL | null = null;
     try {
       url = new URL(webhook);
     } catch {}
     if (!url || !['http:', 'https:'].includes(url.protocol))
-      throw new SettingsError('notify.webhook', 'Enter a full http:// or https:// URL.');
+      throw new SettingsError('notify.webhooks', `“${webhook.slice(0, 80)}” isn't a full http:// or https:// URL.`);
   }
+  if (webhooks.length > MAX_WEBHOOKS)
+    throw new SettingsError('notify.webhooks', `Add at most ${MAX_WEBHOOKS} webhook URLs.`);
   if (channels.includes(ENUM_NOTIFY_TYPE.email) && email.length === 0)
     throw new SettingsError('notify.email', 'Add at least one recipient, or turn email off.');
-  if (channels.includes(ENUM_NOTIFY_TYPE.webhook) && !webhook)
-    throw new SettingsError('notify.webhook', 'Add a webhook URL, or turn the webhook off.');
+  if (channels.includes(ENUM_NOTIFY_TYPE.webhook) && webhooks.length === 0)
+    throw new SettingsError('notify.webhooks', 'Add at least one webhook URL, or turn webhooks off.');
 
-  return { channels, email: email.join(', '), webhook };
+  return { channels, email: email.join(', '), webhooks };
 }
 
 // ---------- storage ----------
@@ -135,7 +152,7 @@ export default class CtrlSettings {
     this.cache = {
       baseUrl: typeof saved.baseUrl === 'string' ? saved.baseUrl : defaults.baseUrl,
       rateLimit: saved.rateLimit ?? defaults.rateLimit,
-      notify: saved.notify ?? defaults.notify,
+      notify: normalizeNotify(saved.notify) ?? defaults.notify,
     };
     return this.cache;
   }

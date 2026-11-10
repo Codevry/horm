@@ -442,6 +442,13 @@ pre,
   font: inherit;
 }
 
+.textarea {
+  min-height: 0;
+  padding: 10px 12px;
+  line-height: 1.6;
+  resize: vertical;
+}
+
 .input::placeholder {
   color: var(--text-3);
 }
