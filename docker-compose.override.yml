@@ -1,0 +1,9 @@
+# Loaded automatically by `docker compose up` for local runs (Coolify ignores it).
+# Publishes the app on the host: http://localhost:${PORT:-9988}
+services:
+  app:
+    ports:
+      - '${PORT:-9988}:9988'
+    environment:
+      # reached directly (no proxy in front): don't trust X-Forwarded-For
+      - TRUST_PROXY=${TRUST_PROXY:-false}

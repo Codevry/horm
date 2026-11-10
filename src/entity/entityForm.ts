@@ -1,26 +1,31 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Unique } from 'typeorm';
-import { nanoid } from 'nanoid';
-import { User } from './entityUser';
+import { type FormSettings, parseFormSettings } from '@/entity/entitySettings.ts';
 
-@Entity('forms')
-@Unique(['token'])
-export class Form {
-  @PrimaryGeneratedColumn()
-  id!: number;
+export interface Form {
+  id: number;
+  name: string;
+  token: string;
+  createdAt: Date;
+  isActive: boolean;
+  settings: FormSettings;
+}
 
-  @Column()
-  name!: string;
+export interface FormRow {
+  id: number;
+  name: string;
+  token: string;
+  createdAt: string;
+  isActive: number;
+  userToken: string | null;
+  settings: string | null;
+}
 
-  @Column({ default: nanoid() })
-  token!: string;
-
-  @CreateDateColumn({ type: 'timestamp', default: () => 'NOW()' })
-  createdAt!: Date;
-
-  @ManyToOne(() => User, user => user.token)
-  @JoinColumn({ referencedColumnName: 'token' })
-  user!: User;
-
-  @Column({ default: true })
-  isActive!: boolean;
+export function toForm(row: FormRow): Form {
+  return {
+    id: row.id,
+    name: row.name,
+    token: row.token,
+    createdAt: new Date(row.createdAt),
+    isActive: row.isActive === 1,
+    settings: parseFormSettings(row.settings),
+  };
 }

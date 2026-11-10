@@ -1,11 +1,13 @@
-import type { DataSource } from 'typeorm';
+import type { Database } from 'bun:sqlite';
 import CtrlForm from '@/controller/ctrlForm.ts';
 import CtrlRecords from '@/controller/ctrlRecords.ts';
+import CtrlSettings from '@/controller/ctrlSettings.ts';
 import MessageQueue from '@/mq/queue.ts';
 
 export default class Globals {
-  static dataSource: DataSource;
+  static db: Database;
   static ctrlForm = new CtrlForm();
   static ctrlRecords = new CtrlRecords();
-  static mqQueueRecord: MessageQueue;
+  static ctrlSettings = new CtrlSettings();
+  static mqQueueRecord: MessageQueue | null = null;
 }

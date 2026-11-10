@@ -1,22 +1,21 @@
-import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
-import { nanoid } from 'nanoid';
 import { ENUM_ROLES } from '@/utils/enums.ts';
 
-@Entity()
-@Unique(['token'])
-export class User {
-  @PrimaryGeneratedColumn()
-  id: number | undefined;
+export interface User {
+  id: number;
+  name: string;
+  token: string;
+  role: ENUM_ROLES;
+  isActive: boolean;
+}
 
-  @Column()
-  name!: string;
+export interface UserRow {
+  id: number;
+  name: string;
+  token: string;
+  role: string;
+  isActive: number;
+}
 
-  @Column({ default: nanoid() })
-  token!: string;
-
-  @Column({ type: 'text', enum: ENUM_ROLES, default: ENUM_ROLES.USER })
-  role!: ENUM_ROLES;
-
-  @Column({ default: true })
-  isActive!: boolean;
+export function toUser(row: UserRow): User {
+  return { ...row, role: row.role as ENUM_ROLES, isActive: row.isActive === 1 };
 }

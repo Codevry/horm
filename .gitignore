@@ -34,3 +34,12 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .DS_Store
 
 database.sqlite
+
+# sqlite data
+data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# redis snapshots from local runs
+dump.rdb

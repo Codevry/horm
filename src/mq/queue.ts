@@ -1,5 +1,4 @@
 import { type ConnectionOptions, Queue, QueueEvents } from 'bullmq';
-import IORedis from 'ioredis';
 import type { ENUM_JOBS } from '@/utils/enums.ts';
 
 export default class MessageQueue {
@@ -10,7 +9,17 @@ export default class MessageQueue {
   constructor(connection: ConnectionOptions, name: string) {
     this.name = name;
     this.connection = connection;
-    this.queue = new Queue(this.name, { connection });
+    this.queue = new Queue(this.name, {
+      connection,
+      defaultJobOptions: {
+        // retry failed notifications: 30s, 1m, 2m, 4m ... (NOTIFY_ATTEMPTS tries, first delay NOTIFY_RETRY_DELAY s)
+        attempts: Math.max(1, Number(Bun.env.NOTIFY_ATTEMPTS) || 5),
+        backoff: { type: 'exponential', delay: Math.max(1, Number(Bun.env.NOTIFY_RETRY_DELAY) || 30) * 1000 },
+        // don't keep every job in redis forever
+        removeOnComplete: { age: 24 * 3600, count: 1000 },
+        removeOnFail: { age: 7 * 24 * 3600, count: 5000 },
+      },
+    });
     this.events();
   }
 

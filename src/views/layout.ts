@@ -1,109 +1,101 @@
-export function layout(title: string, body: string) {
+import { escapeHtml } from '@/utils/html.ts';
+import { brandMark, icon } from '@/views/icons.ts';
+import type { Form } from '@/entity/entityForm.ts';
+import type { FormStats } from '@/controller/ctrlRecords.ts';
+
+export interface NavForm {
+  form: Form;
+  stats: FormStats;
+}
+
+// copy-to-clipboard for any element with data-copy="text"
+const script = `
+document.addEventListener('click', async e => {
+  const btn = e.target.closest('[data-copy]');
+  if (!btn) return;
+  try {
+    await navigator.clipboard.writeText(btn.dataset.copy);
+    const label = btn.querySelector('.copy-label');
+    const prev = label && label.textContent;
+    btn.setAttribute('data-copied', '');
+    if (label) label.textContent = 'Copied';
+    setTimeout(() => { btn.removeAttribute('data-copied'); if (label) label.textContent = prev; }, 1600);
+  } catch {}
+});`;
+
+function document(title: string, body: string) {
   return `<!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <title>${title}</title>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        max-width: 800px;
-        margin: 40px auto;
-        padding: 0 20px;
-        background-color: #f9f9f9;
-        color: #333;
-      }
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>${escapeHtml(title)} · Horm</title>
+  <link rel="preload" href="/dashboard/assets/fonts/instrument-sans.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/dashboard/assets/app.css" />
+</head>
+<body>
+${body}
+<script>${script}</script>
+</body>
+</html>`;
+}
 
-      h1 {
-        text-align: center;
-        margin-bottom: 30px;
-      }
+/**
+ * full dashboard page: ink rail with the form list + main work area
+ * `body` must already be safe HTML
+ */
+export function layout(title: string, body: string, nav: { forms: NavForm[]; active?: string }) {
+  const formLinks = nav.forms
+    .map(
+      ({ form, stats }) => `
+      <a class="rail-link" href="/dashboard/forms/${encodeURIComponent(form.token)}"${
+        nav.active === form.token ? ' aria-current="page"' : ''
+      }>
+        <span class="rail-dot${form.isActive ? '' : ' off'}" title="${form.isActive ? 'Accepting submissions' : 'Paused'}"></span>
+        <span class="label">${escapeHtml(form.name)}</span>
+        <span class="count num">${stats.total}</span>
+      </a>`,
+    )
+    .join('');
 
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        background-color: #fff;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        border-radius: 8px;
-        overflow: hidden;
-      }
+  return document(
+    title,
+    `<div class="app">
+  <nav class="rail" aria-label="Main">
+    <a class="brand" href="/dashboard">${brandMark}<span>horm</span></a>
+    <div class="rail-section">
+      <a class="rail-link" href="/dashboard"${nav.active === 'forms' ? ' aria-current="page"' : ''}>
+        ${icon('inbox')}<span class="label">All forms</span>
+      </a>
+      <a class="rail-link" href="/dashboard/settings"${nav.active === 'settings' ? ' aria-current="page"' : ''}>
+        ${icon('sliders')}<span class="label">Settings</span>
+      </a>
+    </div>
+    ${
+      nav.forms.length
+        ? `<div class="rail-section">
+      <div class="rail-heading">Forms</div>
+      ${formLinks}
+    </div>`
+        : ''
+    }
+    <div class="rail-foot">
+      <form method="POST" action="/dashboard/logout">
+        <button type="submit" class="rail-link">${icon('logout')}<span class="label">Log out</span></button>
+      </form>
+    </div>
+  </nav>
+  <main class="main"><div class="page">
+${body}
+  </div></main>
+</div>`,
+  );
+}
 
-      th, td {
-        padding: 12px 16px;
-        text-align: left;
-      }
-
-      th {
-        background-color: #f1f1f1;
-        font-weight: 600;
-      }
-
-      tr:nth-child(even) {
-        background-color: #fafafa;
-      }
-
-      tr:hover {
-        background-color: #f0f8ff;
-      }
-
-      a {
-        text-decoration: none;
-        color: #0077cc;
-      }
-
-      a:hover {
-        text-decoration: underline;
-      }
-
-      button {
-        padding: 6px 12px;
-        border: none;
-        border-radius: 6px;
-        background-color: #0077cc;
-        color: white;
-        cursor: pointer;
-        font-size: 14px;
-      }
-
-      button:hover {
-        background-color: #005fa3;
-      }
-
-      .top-link {
-        display: inline-block;
-        margin-bottom: 20px;
-        padding: 8px 14px;
-        background-color: #28a745;
-        color: white;
-        border-radius: 6px;
-        font-weight: bold;
-      }
-
-      .top-link:hover {
-        background-color: #218838;
-      }
-
-      form {
-        display: inline;
-      }
-
-      input[type="text"], input[name="name"] {
-        padding: 8px;
-        width: 60%;
-        max-width: 300px;
-        border: 1px solid #ccc;
-        border-radius: 6px;
-        margin-right: 10px;
-        font-size: 14px;
-      }
-
-      form button {
-        margin-top: 10px;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>${title}</h1>
-    ${body}
-  </body>
-  </html>`;
+/**
+ * standalone page without the rail (login)
+ */
+export function bareLayout(title: string, body: string) {
+  return document(title, body);
 }

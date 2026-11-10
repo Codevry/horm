@@ -1,6 +1,15 @@
-import { Form } from '@/entity/entityForm';
+import { type Form, type FormRow, toForm } from '@/entity/entityForm.ts';
 import { nanoid } from 'nanoid';
-import Globals from '@/utils/globals';
+import Globals from '@/utils/globals.ts';
+
+/**
+ * find a form row by token, throws if it does not exist
+ */
+function findFormOrThrow(token: string): Form {
+  const row = Globals.db.query<FormRow, [string]>('SELECT * FROM forms WHERE token = ?').get(token);
+  if (!row) throw new Error('Form not found');
+  return toForm(row);
+}
 
 export default class CtrlForm {
   /**
@@ -15,15 +24,14 @@ export default class CtrlForm {
       // check if name exists
       if (!name) throw new Error('Form name is required');
 
-      // create a new form
-      const formRepository = Globals.dataSource.getRepository(Form);
-      const form = new Form();
-      form.token = nanoid();
-      form.name = name;
-      form.user = user;
-
-      // save form
-      await formRepository.save(form);
+      // create & save a new form
+      const row = Globals.db
+        .query<
+          FormRow,
+          [string, string, string, string | null]
+        >('INSERT INTO forms (name, token, createdAt, userToken) VALUES (?, ?, ?, ?) RETURNING *')
+        .get(name, nanoid(), new Date().toISOString(), user ?? null)!;
+      const form = { ...toForm(row), user };
 
       // return response
       return {
@@ -47,15 +55,11 @@ export default class CtrlForm {
    */
   async get() {
     try {
-      // get form repository
-      const formRepository = Globals.dataSource.getRepository(Form);
-
       // find all forms sorted by createdAt
-      const forms = await formRepository.find({
-        order: {
-          createdAt: 'DESC',
-        },
-      });
+      const forms = Globals.db
+        .query<FormRow, []>('SELECT * FROM forms ORDER BY createdAt DESC, id DESC')
+        .all()
+        .map(toForm);
 
       // return response
       return {
@@ -85,16 +89,12 @@ export default class CtrlForm {
 
       if (!formToken) throw new Error('formToken is required');
 
-      // get form repository
-      const formRepository = Globals.dataSource.getRepository(Form);
-
       // find form by token
-      const form = await formRepository.findOneBy({ token: formToken });
-      if (!form) throw new Error('Form not found');
+      const form = findFormOrThrow(formToken);
 
       // update form active state
+      Globals.db.query('UPDATE forms SET isActive = ? WHERE token = ?').run(active ? 1 : 0, formToken);
       form.isActive = active;
-      await formRepository.save(form);
 
       // return response
       return {
@@ -121,15 +121,11 @@ export default class CtrlForm {
 
       if (!formToken) throw new Error('formToken is required');
 
-      // get form repository
-      const formRepository = Globals.dataSource.getRepository(Form);
-
       // find form by token
-      const form = await formRepository.findOneBy({ token: formToken });
-      if (!form) throw new Error('Form not found');
+      const form = findFormOrThrow(formToken);
 
-      // delete form
-      await formRepository.remove(form);
+      // delete form (its records are removed with it)
+      Globals.db.query('DELETE FROM forms WHERE token = ?').run(formToken);
 
       // return response
       return {
@@ -156,12 +152,8 @@ export default class CtrlForm {
 
       if (!formToken) throw new Error('formToken is required');
 
-      // get form repository
-      const formRepository = Globals.dataSource.getRepository(Form);
-
       // find form by token
-      const form = await formRepository.findOneBy({ token: formToken });
-      if (!form) throw new Error('Form not found');
+      const form = findFormOrThrow(formToken);
 
       // return response
       return {
