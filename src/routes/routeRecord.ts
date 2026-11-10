@@ -25,7 +25,12 @@ app.post(
 // get all records for a form
 app.get('/form/:formId', middlewareAuthAdmin, async c => {
   const formId = c.req.param('formId');
-  const result = await Globals.ctrlRecords.getByForm({ formToken: formId });
+  // optional ?page=&limit= (without limit every record is returned)
+  const result = await Globals.ctrlRecords.getByForm({
+    formToken: formId,
+    page: c.req.query('page'),
+    limit: c.req.query('limit'),
+  });
   return c.json(result);
 });
 

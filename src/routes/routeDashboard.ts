@@ -12,6 +12,10 @@ import { escapeHtml } from '@/utils/html.ts';
 import { recordsToCsv, safeFileName } from '@/utils/export.ts';
 import middlewareAuthDashboard, { DASHBOARD_COOKIE } from '@/middlewares/middlewareAuthDashboard.ts';
 import type { Records } from '@/entity/entityRecords.ts';
+import type { Pagination } from '@/controller/ctrlRecords.ts';
+
+// submissions shown per page on a form's page
+const PAGE_SIZE = 50;
 
 const app = new Hono();
 
@@ -145,14 +149,14 @@ app.get('/forms/:token', async c => {
   const form = await Globals.ctrlForm.getByToken({ formToken });
   if (!form.status) return errorPage(c, 'Form not found', 'This form may have been deleted.', 404);
 
-  const result = await Globals.ctrlRecords.getByForm({ formToken });
+  const result = await Globals.ctrlRecords.getByForm({ formToken, page: c.req.query('page') ?? 1, limit: PAGE_SIZE });
   if (!result.status) return errorPage(c, "Couldn't load submissions", 'Please try again.', 500);
 
-  const records = (result as { data: Records[] }).data;
+  const { data: records, pagination } = result as { data: Records[]; pagination: Pagination };
   const { forms, start } = await navData();
   const stats = forms.find(f => f.form.token === formToken)!.stats;
   return c.html(
-    layout(form.data!.name, formRecordsView(form.data!, records, stats, start, publicOrigin(c)), {
+    layout(form.data!.name, formRecordsView(form.data!, records, pagination, stats, start, publicOrigin(c)), {
       forms,
       active: formToken,
     }),

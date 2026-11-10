@@ -65,17 +65,43 @@ export default class CtrlRecords {
       const form = await Globals.ctrlForm.getByToken({ formToken: token });
       if (form.error) return form;
 
-      // find all records for the form sorted by createdAt
+      // optional pagination: without `limit` every record is returned (newest first)
+      const limit = body.limit === undefined ? undefined : Number(body.limit);
+      if (limit !== undefined && (!Number.isInteger(limit) || limit < 1 || limit > 500))
+        throw new Error('limit must be a whole number between 1 and 500');
+
+      if (limit === undefined) {
+        const records = Globals.db
+          .query<RecordRow, [string]>('SELECT * FROM records WHERE formToken = ? ORDER BY createdAt DESC, id DESC')
+          .all(token)
+          .map(toRecord);
+
+        return {
+          status: true,
+          message: 'Records retrieved successfully',
+          data: records,
+        };
+      }
+
+      const { total } = Globals.db
+        .query<{ total: number }, [string]>('SELECT COUNT(*) AS total FROM records WHERE formToken = ?')
+        .get(token)!;
+      const pages = Math.max(1, Math.ceil(total / limit));
+      const requested = Number(body.page ?? 1);
+      const page = Number.isInteger(requested) && requested > 0 ? Math.min(requested, pages) : 1;
+
       const records = Globals.db
-        .query<RecordRow, [string]>('SELECT * FROM records WHERE formToken = ? ORDER BY createdAt DESC, id DESC')
-        .all(token)
+        .query<RecordRow, [string, number, number]>(
+          'SELECT * FROM records WHERE formToken = ? ORDER BY createdAt DESC, id DESC LIMIT ? OFFSET ?',
+        )
+        .all(token, limit, (page - 1) * limit)
         .map(toRecord);
 
-      // return response
       return {
         status: true,
         message: 'Records retrieved successfully',
         data: records,
+        pagination: { page, limit, total, pages },
       };
     } catch (error: Error | any) {
       return {
@@ -128,4 +154,11 @@ export interface FormStats {
   total: number;
   last: Date | null;
   daily: number[];
+}
+
+export interface Pagination {
+  page: number;
+  limit: number;
+  total: number;
+  pages: number;
 }

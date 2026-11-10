@@ -1,6 +1,6 @@
 import type { Form } from '@/entity/entityForm.ts';
 import type { Records } from '@/entity/entityRecords.ts';
-import type { FormStats } from '@/controller/ctrlRecords.ts';
+import type { FormStats, Pagination } from '@/controller/ctrlRecords.ts';
 import { escapeHtml } from '@/utils/html.ts';
 import { icon } from '@/views/icons.ts';
 import { copyButton, formatDate, formatDateTime, intakeStrip, plural, relativeTime, status } from '@/views/parts.ts';
@@ -45,7 +45,35 @@ function integration(form: Form, origin: string, open: boolean) {
   </details>`;
 }
 
-export function formRecordsView(form: Form, records: Records[], stats: FormStats, start: Date, origin: string) {
+function pager(token: string, p: Pagination) {
+  if (p.pages <= 1) return '';
+  const href = (page: number) => `/dashboard/forms/${token}?page=${page}`;
+  const from = (p.page - 1) * p.limit + 1;
+  const to = Math.min(p.page * p.limit, p.total);
+  const prev =
+    p.page > 1
+      ? `<a class="btn btn-sm" href="${href(p.page - 1)}" rel="prev">${icon('arrowLeft')}Newer</a>`
+      : `<span class="btn btn-sm" aria-disabled="true">${icon('arrowLeft')}Newer</span>`;
+  const next =
+    p.page < p.pages
+      ? `<a class="btn btn-sm" href="${href(p.page + 1)}" rel="next">Older${icon('chevron')}</a>`
+      : `<span class="btn btn-sm" aria-disabled="true">Older${icon('chevron')}</span>`;
+
+  return `<nav class="pager" aria-label="Submissions pages">
+    <span class="muted num">${from}–${to} of ${p.total}</span>
+    <span class="pager-pages num">Page ${p.page} of ${p.pages}</span>
+    <div class="actions">${prev}${next}</div>
+  </nav>`;
+}
+
+export function formRecordsView(
+  form: Form,
+  records: Records[],
+  pagination: Pagination,
+  stats: FormStats,
+  start: Date,
+  origin: string,
+) {
   const token = encodeURIComponent(form.token);
 
   const head = `
@@ -110,5 +138,6 @@ export function formRecordsView(form: Form, records: Records[], stats: FormStats
         <tbody>${rows}</tbody>
       </table>
     </div>
+    ${pager(token, pagination)}
   </section>`;
 }

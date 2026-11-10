@@ -309,7 +309,27 @@ paths:
           type: string
     get:
       summary: Get Records by Form
-      parameters: []
+      description: >-
+        Returns every record (newest first). Pass `limit` to paginate; the response then
+        also contains `pagination: { page, limit, total, pages }`.
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Records per page (1-500). Omit to get all records.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+          example: 50
+        - name: page
+          in: query
+          required: false
+          description: Page number, starting at 1 (only used with `limit`).
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
       responses:
         '200':
           headers:
