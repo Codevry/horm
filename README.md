@@ -61,26 +61,21 @@ minutes.
 
 ## Quick start
 
-On first start Horm creates an **admin user** and prints its **token** in the logs:
+Horm needs one required setting, **`ADMIN_TOKEN`**: the token you sign in to `/dashboard` with and send as the
+`Authorization` header for the API. Use at least 16 random characters and keep it secret:
 
-```text
-Default user created successfully: {
-  id: 1,
-  name: "admin",
-  token: "xY3kP9_aBcDeFgHiJkLmN",
-  role: "admin",
-  isActive: true,
-}
+```bash
+openssl rand -hex 24
 ```
 
-Use that token to sign in at `/dashboard` and as the `Authorization` header for the API. Keep it secret.
+Horm refuses to start without it. To rotate it, change the variable and restart; the old token stops working.
 
 ### Coolify
 
 1. In Coolify, create a new resource from this Git repository and choose the **Docker Compose** build pack. The default
    compose location `/docker-compose.yaml` is correct.
-2. Deploy. Coolify generates a domain for the app and a password for Redis automatically.
-3. Open the logs of the `app` container and copy the admin token.
+2. In *Environment Variables*, set `ADMIN_TOKEN` (required).
+3. Deploy. Coolify generates a domain for the app and a password for Redis automatically.
 4. Visit `https://<your-domain>/dashboard` and sign in.
 5. Optional: in *Environment Variables*, set `SMTP_*` to send emails and `CORS` to limit which sites may post
    (see [Configuration](#configuration)).
@@ -102,12 +97,10 @@ cd horm
 cp .env.docker.example .env
 ```
 
-```bash
-docker compose up -d
-```
+Set `ADMIN_TOKEN` in `.env`, then:
 
 ```bash
-docker compose logs app
+docker compose up -d
 ```
 
 The app listens on <http://localhost:9988> (change it with `PORT` in `.env`). `docker-compose.override.yml` is picked up
@@ -120,7 +113,7 @@ docker build -t horm .
 ```
 
 ```bash
-docker run -d --name horm -p 9988:9988 -v horm-data:/app/data -e REDIS_URL=redis://your-redis:6379 horm
+docker run -d --name horm -p 9988:9988 -v horm-data:/app/data -e ADMIN_TOKEN=your-long-secret-token -e REDIS_URL=redis://your-redis:6379 horm
 ```
 
 Leave out `REDIS_URL` if you don't need notifications. Put a reverse proxy with HTTPS in front for production and set
@@ -138,6 +131,8 @@ bun install --frozen-lockfile --production
 cp .env.source.example .env
 ```
 
+Set `ADMIN_TOKEN` in `.env`.
+
 ```bash
 bun start
 ```
@@ -146,45 +141,34 @@ The SQLite database is created at `data/horm.sqlite` (change with `SQLITE_PATH`)
 
 ## Sending submissions from your website
 
-Every form has a **token**. Your site sends submissions as JSON to `POST /records`:
-
-```json
-{
-  "formToken": "Wq2rT7yUi9oP0aS3dF5gH",
-  "data": { "name": "Ada Lovelace", "email": "ada@example.com", "message": "Hello!" }
-}
-```
-
-`data` can hold any fields, including arrays and nested objects. The dashboard shows one column per field.
-
-The easiest way is to copy the snippet from the form's page in the dashboard (**Send submissions to this form**). It
-already contains your base URL and the form's token:
+Add `data-horm="<form token>"` to any form and paste this script once, after your forms. Replace the URL with your Horm
+address. That's it:
 
 ```html
-<form id="contact">
-  <input name="name" required />
+<form data-horm="Wq2rT7yUi9oP0aS3dF5gH">
   <input name="email" type="email" required />
   <textarea name="message"></textarea>
   <button>Send</button>
 </form>
 
 <script>
-  document.getElementById('contact').addEventListener('submit', async e => {
+  document.querySelectorAll('form[data-horm]').forEach(f => f.onsubmit = e => {
     e.preventDefault();
-    const res = await fetch('https://forms.example.com/records', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        formToken: 'Wq2rT7yUi9oP0aS3dF5gH',
-        data: Object.fromEntries(new FormData(e.target)),
-      }),
-    });
-    const result = await res.json();
-    if (res.status === 429) alert(result.error); // rate limited
-    else if (result.status) e.target.reset(); // saved
+    fetch('https://forms.example.com/records', { method: 'POST', body: JSON.stringify({ formToken: f.dataset.horm, data: Object.fromEntries(new FormData(f)) }) }).then(() => f.reset());
   });
 </script>
 ```
+
+The dashboard shows this snippet with your URL and token filled in (**Send submissions to this form**). One script
+handles every form on the page, each with its own token. Every field `name` becomes a column in the dashboard.
+
+Under the hood it is a plain `POST /records` with a JSON body, so you can send it from anywhere:
+
+```json
+{ "formToken": "Wq2rT7yUi9oP0aS3dF5gH", "data": { "email": "ada@example.com", "message": "Hello!" } }
+```
+
+`data` can hold any fields, including arrays and nested objects.
 
 Responses:
 
@@ -293,11 +277,12 @@ Emails are sent through your SMTP server (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`,
 
 ## Configuration
 
-All variables are optional. For Docker Compose and Coolify see also [ENV.docker.md](ENV.docker.md); for running from
+`ADMIN_TOKEN` is required; everything else is optional. For Docker Compose and Coolify see also [ENV.docker.md](ENV.docker.md); for running from
 source see [ENV.md](ENV.md).
 
 | Variable | Default | Description |
 | --- | --- | --- |
+| `ADMIN_TOKEN` | **required** | Admin token for the dashboard and API (min 16 chars). |
 | `PORT` | `9988` (Docker) | Port the server listens on. |
 | `SQLITE_PATH` | `data/horm.sqlite` | SQLite database file (created if missing). |
 | `BASE_URL` | Coolify domain | Public URL used in form snippets. Can be changed in the dashboard. |

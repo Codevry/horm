@@ -1,8 +1,7 @@
 import { Database } from 'bun:sqlite';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { nanoid } from 'nanoid';
-import { toUser, type UserRow } from '@/entity/entityUser.ts';
+import type { UserRow } from '@/entity/entityUser.ts';
 import { ENUM_ROLES } from '@/utils/enums.ts';
 
 const SCHEMA = `
@@ -75,20 +74,33 @@ export class DbInit {
     }
   }
 
+  /**
+   * the admin token comes from ADMIN_TOKEN (required); the first admin user is created
+   * or updated so its token always matches the env value
+   */
   private static createDefaultUserIfNotExists(db: Database): void {
-    const { count } = db.query<{ count: number }, []>('SELECT COUNT(*) AS count FROM users').get()!;
+    const token = (Bun.env.ADMIN_TOKEN ?? '').trim();
+    if (token.length < 16) {
+      console.error('ADMIN_TOKEN is required and must be at least 16 characters (e.g. `openssl rand -hex 24`).');
+      process.exit(1);
+    }
 
-    if (count === 0) {
-      const row = db
-        .query<UserRow, [string, string, string]>('INSERT INTO users (name, token, role) VALUES (?, ?, ?) RETURNING *')
-        .get('admin', nanoid(), ENUM_ROLES.ADMIN)!;
-      console.log('Default user created successfully:', toUser(row));
+    const admin = db
+      .query<UserRow, [string]>('SELECT * FROM users WHERE role = ? ORDER BY id LIMIT 1')
+      .get(ENUM_ROLES.ADMIN);
+
+    if (!admin) {
+      db.query('INSERT INTO users (name, token, role) VALUES (?, ?, ?)').run('admin', token, ENUM_ROLES.ADMIN);
+      console.log('Admin user created with ADMIN_TOKEN');
+    } else if (admin.token !== token) {
+      db.transaction(() => {
+        db.exec('PRAGMA defer_foreign_keys = ON');
+        db.query('UPDATE users SET token = ?, isActive = 1 WHERE id = ?').run(token, admin.id);
+        db.query('UPDATE forms SET userToken = ? WHERE userToken = ?').run(token, admin.token);
+      })();
+      console.log('Admin token updated from ADMIN_TOKEN');
     } else {
-      console.log('Default user already exists');
-      const admin = db
-        .query<UserRow, [string]>('SELECT * FROM users WHERE role = ? ORDER BY id LIMIT 1')
-        .get(ENUM_ROLES.ADMIN);
-      console.log('Default admin user:', admin ? toUser(admin) : null);
+      console.log('Admin user ready (ADMIN_TOKEN)');
     }
   }
 }

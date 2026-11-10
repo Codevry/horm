@@ -4,6 +4,7 @@
 #          (default compose location /docker-compose.yaml works as-is).
 #   SERVICE_FQDN_APP_9988   -> Coolify generates a domain and routes it to port 9988 of the app
 #   SERVICE_PASSWORD_REDIS  -> Coolify generates a random redis password
+#   ADMIN_TOKEN             -> REQUIRED: your dashboard/API token (min 16 chars)
 #   Set SMTP_* / NOTIFY_* / CORS in Coolify's "Environment Variables" tab.
 #
 # Locally: `docker compose up` (docker-compose.override.yml publishes the port).
@@ -16,6 +17,8 @@ services:
     environment:
       - SERVICE_FQDN_APP_9988
       - NODE_ENV=production
+      # required: admin token for the dashboard and API (min 16 chars)
+      - ADMIN_TOKEN=${ADMIN_TOKEN:?ADMIN_TOKEN is required}
       - PORT=9988
       - SQLITE_PATH=/app/data/horm.sqlite
       - REDIS_URL=redis://default:${SERVICE_PASSWORD_REDIS:-horm}@redis:6379

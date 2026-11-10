@@ -1,9 +1,10 @@
 # Environment Variables (Docker Compose / Coolify)
 
-All variables are optional. The SQLite database is stored on the `horm-data` volume at `/app/data/horm.sqlite`.
+`ADMIN_TOKEN` is required; all other variables are optional. The SQLite database is stored on the `horm-data` volume at `/app/data/horm.sqlite`.
 
 | Variable               | Type   | Description                                                        |
 |------------------------|--------|--------------------------------------------------------------------|
+| ADMIN_TOKEN            | string | **Required.** Admin token for the dashboard and API, at least 16 characters (`openssl rand -hex 24`). Changing it replaces the old token on restart |
 | PORT                   | number | Host port to publish the app on for local runs (default `9988`)    |
 | SERVICE_PASSWORD_REDIS | string | Redis password inside the stack (Coolify generates it; default `horm`) |
 | BASE_URL               | string | Public URL used in form snippets. Defaults to Coolify's generated domain; can be changed in Dashboard > Settings |
