@@ -4,6 +4,7 @@ The following environment variables are required for the application:
 
 | Variable        | Type   | Description                                            |
 |-----------------|--------|--------------------------------------------------------|
+| ADMIN_TOKEN     | string | **Required.** Admin token for the dashboard and API, at least 16 characters |
 | PORT            | number | The port number on which the server will listen        |
 | BASE_URL        | string | Public URL of this install, used in form snippets (also settable in Dashboard > Settings) |
 | CORS            | string | CORS configuration for allowed origins                 |

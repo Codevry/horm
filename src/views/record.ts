@@ -18,18 +18,11 @@ function renderCell(value: unknown): string {
 
 function integration(form: Form, origin: string, open: boolean) {
   const endpoint = `${origin}/records`;
-  const snippet = `<form id="contact">…</form>
+  const snippet = `<form data-horm="${form.token}">…</form>
 <script>
-  document.getElementById('contact').addEventListener('submit', async e => {
+  document.querySelectorAll('form[data-horm]').forEach(f => f.onsubmit = e => {
     e.preventDefault();
-    await fetch('${endpoint}', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        formToken: '${form.token}',
-        data: Object.fromEntries(new FormData(e.target)),
-      }),
-    });
+    fetch('${endpoint}', { method: 'POST', body: JSON.stringify({ formToken: f.dataset.horm, data: Object.fromEntries(new FormData(f)) }) }).then(() => f.reset());
   });
 </script>`;
 
