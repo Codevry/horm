@@ -1,8 +1,24 @@
-export function layout(title: string, body: string) {
+import { escapeHtml } from '@/utils/html.ts';
+
+/**
+ * wrap a page body in the dashboard layout
+ * `title` is escaped, `body` must already be safe HTML
+ */
+export function layout(title: string, body: string, options: { loggedIn?: boolean } = {}) {
+  const safeTitle = escapeHtml(title);
+  const nav = options.loggedIn
+    ? `<nav class="nav">
+        <a href="/dashboard">Forms</a>
+        <form method="POST" action="/dashboard/logout"><button type="submit">Log out</button></form>
+      </nav>`
+    : '';
+
   return `<!DOCTYPE html>
   <html lang="en">
   <head>
-    <title>${title}</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>${safeTitle}</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -99,10 +115,25 @@ export function layout(title: string, body: string) {
       form button {
         margin-top: 10px;
       }
+
+      .nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .error {
+        color: #b00020;
+      }
+
+      .muted {
+        color: #777;
+      }
     </style>
   </head>
   <body>
-    <h1>${title}</h1>
+    ${nav}
+    <h1>${safeTitle}</h1>
     ${body}
   </body>
   </html>`;

@@ -1,42 +1,43 @@
 import type { Records } from '@/entity/entityRecords.ts';
+import { escapeHtml } from '@/utils/html.ts';
 
-export function generateHTMLTable(records: Records[]): string {
-  if (records.length === 0) return '<p>No records found.</p>';
-
-  function renderValue(value: any): string {
-    if (Array.isArray(value)) {
-      if (value.length === 0) return '[]';
-      return value.map(item => (typeof item === 'object' ? generateTable(item) : `<li>${item}</li>`)).join('');
-    } else if (typeof value === 'object' && value !== null) {
-      return generateTable(value);
-    } else {
-      return String(value);
-    }
+function renderValue(value: unknown): string {
+  if (Array.isArray(value)) {
+    if (value.length === 0) return '[]';
+    return `<ul>${value
+      .map(item => `<li>${typeof item === 'object' && item !== null ? generateTable(item) : escapeHtml(item)}</li>`)
+      .join('')}</ul>`;
+  } else if (value instanceof Date) {
+    return escapeHtml(value.toISOString());
+  } else if (typeof value === 'object' && value !== null) {
+    return generateTable(value as Record<string, unknown>);
+  } else {
+    return escapeHtml(value);
   }
+}
 
-  function generateTable(obj: Records): string {
-    const rows = Object.entries(obj)
-      .map(([key, value]) => `<tr><th>${key}</th><td>${renderValue(value)}</td></tr>`)
-      .join('');
+function generateTable(obj: Record<string, unknown>): string {
+  const rows = Object.entries(obj)
+    .map(([key, value]) => `<tr><th>${escapeHtml(key)}</th><td>${renderValue(value)}</td></tr>`)
+    .join('');
 
-    return `<table border="1" cellspacing="0" cellpadding="4">${rows}</table>`;
-  }
+  return `<table border="1" cellspacing="0" cellpadding="4">${rows}</table>`;
+}
+
+export function generateHTMLTable(formToken: string, records: Records[]): string {
+  const token = encodeURIComponent(formToken);
+  const back = '<p><a href="/dashboard">← Back to forms</a></p>';
+  if (records.length === 0) return `${back}<p>No records found.</p>`;
 
   return `
-  <table>
-     <tr>
-         <td> Download as :  
-              <form method="POST" action="/forms/toggle">
-                 <button type="submit">CSV</button>
-              </form>
-              <form method="POST" action="/forms/toggle">
-                 <button type="submit">JSON</button>
-              </form>
-         </td>
-     </tr>
-  </table>
-
-  <br/>
-  ${records.map(record => generateTable(record)).join('<br/>')}
+  ${back}
+  <p>
+    Download as:
+    <a href="/dashboard/forms/${token}/export?format=csv">CSV</a> ·
+    <a href="/dashboard/forms/${token}/export?format=json">JSON</a>
+  </p>
+  ${records
+    .map(record => generateTable({ id: record.id, createdAt: record.createdAt, data: record.data }))
+    .join('<br/>')}
   `;
 }
