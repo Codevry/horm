@@ -19,6 +19,9 @@ services:
       - PORT=9988
       - SQLITE_PATH=/app/data/horm.sqlite
       - REDIS_URL=redis://default:${SERVICE_PASSWORD_REDIS:-horm}@redis:6379
+      # public URL used in form snippets (can also be set in Dashboard > Settings);
+      # defaults to the domain Coolify generates for this service
+      - BASE_URL=${BASE_URL:-${SERVICE_URL_APP:-${SERVICE_FQDN_APP:-}}}
       - CORS=${CORS:-*}
       # Coolify's proxy (Traefik) sets X-Forwarded-For with the real visitor IP
       - TRUST_PROXY=${TRUST_PROXY:-true}

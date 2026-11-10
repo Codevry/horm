@@ -20,7 +20,8 @@ const SCHEMA = `
     token     TEXT    NOT NULL UNIQUE,
     createdAt TEXT    NOT NULL,
     isActive  INTEGER NOT NULL DEFAULT 1,
-    userToken TEXT    REFERENCES users (token) ON DELETE SET NULL
+    userToken TEXT    REFERENCES users (token) ON DELETE SET NULL,
+    settings  TEXT
   );
 
   CREATE TABLE IF NOT EXISTS records (
@@ -31,7 +32,23 @@ const SCHEMA = `
   );
 
   CREATE INDEX IF NOT EXISTS idx_records_form ON records (formToken, createdAt);
+
+  CREATE TABLE IF NOT EXISTS settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
 `;
+
+/**
+ * small additive migrations for databases created by older versions
+ */
+function migrate(db: Database) {
+  const formColumns = db
+    .query<{ name: string }, []>('PRAGMA table_info(forms)')
+    .all()
+    .map(c => c.name);
+  if (!formColumns.includes('settings')) db.exec('ALTER TABLE forms ADD COLUMN settings TEXT');
+}
 
 export class DbInit {
   /**
@@ -47,6 +64,7 @@ export class DbInit {
       db.exec('PRAGMA foreign_keys = ON;');
       db.exec('PRAGMA busy_timeout = 5000;');
       db.exec(SCHEMA);
+      migrate(db);
       console.log(`Database initialized at ${path}`);
 
       DbInit.createDefaultUserIfNotExists(db);

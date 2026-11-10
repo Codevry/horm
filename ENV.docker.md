@@ -6,6 +6,7 @@ All variables are optional. The SQLite database is stored on the `horm-data` vol
 |------------------------|--------|--------------------------------------------------------------------|
 | PORT                   | number | Host port to publish the app on for local runs (default `9988`)    |
 | SERVICE_PASSWORD_REDIS | string | Redis password inside the stack (Coolify generates it; default `horm`) |
+| BASE_URL               | string | Public URL used in form snippets. Defaults to Coolify's generated domain; can be changed in Dashboard > Settings |
 | CORS                   | string | Comma-separated allowed origins for form submissions (default `*`) |
 | RATE_LIMIT_MAX         | number | Form submissions allowed per IP per window (default `10`, `0` disables) |
 | RATE_LIMIT_WINDOW      | number | Rate-limit window in seconds (default `60`)                        |

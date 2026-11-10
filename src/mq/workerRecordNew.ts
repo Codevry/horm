@@ -75,12 +75,14 @@ async function notify(channel: ENUM_NOTIFY_TYPE, job: Job) {
   const payload = { jobId: job.id, jobName: job.name, record, form };
 
   if (channel === ENUM_NOTIFY_TYPE.webhook) {
-    if (!Bun.env.NOTIFY_WEBHOOK) throw new UnrecoverableError('NOTIFY_WEBHOOK is not set');
-    await sendWebhook(Bun.env.NOTIFY_WEBHOOK, payload);
+    const url = job.data.target || Bun.env.NOTIFY_WEBHOOK;
+    if (!url) throw new UnrecoverableError('No webhook URL configured');
+    await sendWebhook(url, payload);
   } else if (channel === ENUM_NOTIFY_TYPE.email) {
-    if (!Bun.env.NOTIFY_EMAIL || !Bun.env.SMTP_HOST)
-      throw new UnrecoverableError('NOTIFY_EMAIL and SMTP_HOST must be set to send emails');
-    await sendEmail(Bun.env.NOTIFY_EMAIL, `New record created in form: ${form.name}`, payload);
+    const to = job.data.target || Bun.env.NOTIFY_EMAIL;
+    if (!to) throw new UnrecoverableError('No email recipient configured');
+    if (!Bun.env.SMTP_HOST) throw new UnrecoverableError('SMTP_HOST is not set, so emails cannot be sent');
+    await sendEmail(to, `New record created in form: ${form.name}`, payload);
   } else {
     throw new UnrecoverableError(`Unknown notification channel: ${channel}`);
   }

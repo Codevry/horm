@@ -54,7 +54,12 @@ It is super easy to set up/use and will help you save your HTML form responses o
 ### Dashboard
 
 * Open `/dashboard` in a browser and log in with the admin token
-* Create forms, enable/disable them, view records and download them as CSV or JSON
+* Create forms, pause/resume or delete them, view submissions and download them as CSV or JSON
+* **Settings** (global): base URL used in form snippets, default rate limit, default notifications
+  (email recipients / webhook URL), and a server status overview
+* **Form settings**: override the rate limit and notifications per form, or turn notifications off for one form
+* Environment variables (`BASE_URL`, `RATE_LIMIT_*`, `NOTIFY_*`) are the starting defaults; values saved in the
+  dashboard take precedence
 
 ### APIs
 

@@ -5,6 +5,7 @@ The following environment variables are required for the application:
 | Variable        | Type   | Description                                            |
 |-----------------|--------|--------------------------------------------------------|
 | PORT            | number | The port number on which the server will listen        |
+| BASE_URL        | string | Public URL of this install, used in form snippets (also settable in Dashboard > Settings) |
 | CORS            | string | CORS configuration for allowed origins                 |
 | REDIS_URL       | string | Redis connection URL. Optional: needed for email/webhook notifications; also shares rate-limit counters between instances |
 | SQLITE_PATH     | string | Path of the SQLite database file (default `data/horm.sqlite`, created if missing) |

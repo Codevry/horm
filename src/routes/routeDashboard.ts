@@ -5,6 +5,11 @@ import { bareLayout, layout, type NavForm } from '@/views/layout.ts';
 import { formsView, newFormView } from '@/views/forms.ts';
 import { loginView } from '@/views/login.ts';
 import { formRecordsView } from '@/views/record.ts';
+import { formSettingsView, globalSettingsView, type FieldErrors, type SystemStatus } from '@/views/settings.ts';
+import { SettingsError, validateBaseUrl, validateNotify, validateRateLimit } from '@/controller/ctrlSettings.ts';
+import type { FormSettings } from '@/entity/entitySettings.ts';
+import { ENUM_NOTIFY_TYPE } from '@/utils/enums.ts';
+import { redis } from '@/utils/redis.ts';
 import { icon } from '@/views/icons.ts';
 import Globals from '@/utils/globals.ts';
 import { findAdminByToken } from '@/utils/auth.ts';
@@ -63,6 +68,23 @@ const publicOrigin = (c: Context) => {
   const host = c.req.header('x-forwarded-host') || c.req.header('host') || url.host;
   return `${proto}://${host}`;
 };
+
+// base URL for snippets: the global setting, else what the browser used
+const baseUrl = (c: Context) => Globals.ctrlSettings.getGlobal().baseUrl || publicOrigin(c);
+
+const systemStatus = (c: Context): SystemStatus => {
+  const cors = (Bun.env.CORS ?? '*').trim() || '*';
+  return {
+    redis: !!redis,
+    smtp: !!Bun.env.SMTP_HOST,
+    cors,
+    trustProxy: Bun.env.TRUST_PROXY === 'true',
+    detectedUrl: publicOrigin(c),
+  };
+};
+
+const str = (v: unknown) => (Array.isArray(v) ? String(v[0] ?? '') : String(v ?? ''));
+const list = (v: unknown) => (Array.isArray(v) ? v : v === undefined ? [] : [v]).map(x => String(x));
 
 // --- public: static assets (css, fonts)
 
@@ -156,11 +178,132 @@ app.get('/forms/:token', async c => {
   const { forms, start } = await navData();
   const stats = forms.find(f => f.form.token === formToken)!.stats;
   return c.html(
-    layout(form.data!.name, formRecordsView(form.data!, records, pagination, stats, start, publicOrigin(c)), {
+    layout(form.data!.name, formRecordsView(form.data!, records, pagination, stats, start, baseUrl(c)), {
       forms,
       active: formToken,
     }),
   );
+});
+
+// global settings
+app.get('/settings', async c => {
+  const view = globalSettingsView(Globals.ctrlSettings.getGlobal(), systemStatus(c), {
+    saved: c.req.query('saved') === '1',
+  });
+  return page(c, 'Settings', view, 'settings');
+});
+
+app.post('/settings', async c => {
+  const body = await c.req.parseBody({ all: true });
+  const errors: FieldErrors = {};
+  const attempt = <T>(fn: () => T): T | undefined => {
+    try {
+      return fn();
+    } catch (error) {
+      if (error instanceof SettingsError) errors[error.field] = error.message;
+      else throw error;
+    }
+  };
+
+  const draftRate = { max: str(body['rateLimit.max']), window: str(body['rateLimit.window']) };
+  const draftNotify = {
+    channels: list(body['notify.channels']),
+    email: str(body['notify.email']),
+    webhook: str(body['notify.webhook']),
+  };
+  const url = attempt(() => validateBaseUrl(str(body.baseUrl)));
+  const rate = attempt(() => validateRateLimit(draftRate));
+  const notify = attempt(() => validateNotify(draftNotify));
+
+  if (Object.keys(errors).length) {
+    // re-render with what was typed so nothing is lost
+    const draft = {
+      baseUrl: str(body.baseUrl),
+      rateLimit: { max: Number(draftRate.max), window: Number(draftRate.window) },
+      notify: { ...draftNotify, channels: draftNotify.channels as ENUM_NOTIFY_TYPE[] },
+    };
+    return page(c, 'Settings', globalSettingsView(draft, systemStatus(c), { errors }), 'settings', 400);
+  }
+
+  Globals.ctrlSettings.setGlobal('baseUrl', url!);
+  Globals.ctrlSettings.setGlobal('rateLimit', rate!);
+  Globals.ctrlSettings.setGlobal('notify', notify!);
+  return c.redirect('/dashboard/settings?saved=1');
+});
+
+// per-form settings
+app.get('/forms/:token/settings', async c => {
+  const formToken = c.req.param('token');
+  const form = await Globals.ctrlForm.getByToken({ formToken });
+  if (!form.status) return errorPage(c, 'Form not found', 'This form may have been deleted.', 404);
+
+  const view = formSettingsView(form.data!, Globals.ctrlSettings.getGlobal(), systemStatus(c), {
+    saved: c.req.query('saved') === '1',
+  });
+  return page(c, `${form.data!.name} settings`, view, formToken);
+});
+
+app.post('/forms/:token/settings', async c => {
+  const formToken = c.req.param('token');
+  const form = await Globals.ctrlForm.getByToken({ formToken });
+  if (!form.status) return errorPage(c, 'Form not found', 'This form may have been deleted.', 404);
+
+  const body = await c.req.parseBody({ all: true });
+  const rateMode = str(body.rateMode) === 'custom' ? 'custom' : 'global';
+  const notifyMode = str(body.notifyMode) === 'custom' ? 'custom' : 'global';
+  const errors: FieldErrors = {};
+  const settings: FormSettings = {};
+
+  const draftRate = { max: str(body['rateLimit.max']), window: str(body['rateLimit.window']) };
+  const draftNotify = {
+    channels: list(body['notify.channels']),
+    email: str(body['notify.email']),
+    webhook: str(body['notify.webhook']),
+  };
+
+  try {
+    if (rateMode === 'custom') settings.rateLimit = validateRateLimit(draftRate);
+  } catch (error) {
+    if (!(error instanceof SettingsError)) throw error;
+    errors[error.field] = error.message;
+  }
+  try {
+    if (notifyMode === 'custom') settings.notify = validateNotify(draftNotify);
+  } catch (error) {
+    if (!(error instanceof SettingsError)) throw error;
+    errors[error.field] = error.message;
+  }
+
+  if (Object.keys(errors).length) {
+    const view = formSettingsView(form.data!, Globals.ctrlSettings.getGlobal(), systemStatus(c), {
+      errors,
+      draft: {
+        rateMode,
+        notifyMode,
+        // only sections set to "custom" were submitted; keep the others as they were
+        rateLimit: rateMode === 'custom' ? { max: Number(draftRate.max), window: Number(draftRate.window) } : undefined,
+        notify:
+          notifyMode === 'custom'
+            ? { ...draftNotify, channels: draftNotify.channels as ENUM_NOTIFY_TYPE[] }
+            : undefined,
+      },
+    });
+    return page(c, `${form.data!.name} settings`, view, formToken, 400);
+  }
+
+  Globals.ctrlSettings.setForm(formToken, settings);
+  return c.redirect(`/dashboard/forms/${encodeURIComponent(formToken)}/settings?saved=1`);
+});
+
+// delete form (and its submissions)
+app.post('/forms/:token/delete', async c => {
+  const formToken = c.req.param('token');
+  const body = await c.req.parseBody();
+  if (body.confirm !== 'yes') return c.redirect(`/dashboard/forms/${encodeURIComponent(formToken)}/settings`);
+
+  const result = await Globals.ctrlForm.delete({ formToken });
+  if (!result.status) return errorPage(c, "Couldn't delete the form", result.error || 'Please try again.', 500);
+  return c.redirect('/dashboard');
 });
 
 // download form records as CSV or JSON

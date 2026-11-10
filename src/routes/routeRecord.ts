@@ -3,7 +3,8 @@ import Globals from '@/utils/globals.ts';
 import middlewareAuthAdmin from '@/middlewares/middlewareAuthAdmin.ts';
 import { cors } from 'hono/cors';
 import { bodyLimit } from 'hono/body-limit';
-import middlewareRateLimit from '@/middlewares/middlewareRateLimit.ts';
+import { rateLimit } from '@/utils/rateLimit.ts';
+import type { Form } from '@/entity/entityForm.ts';
 
 const app = new Hono();
 // CORS: "*" (default) allows any site, otherwise a comma-separated list of origins
@@ -27,18 +28,25 @@ app.use(
 // create new record
 app.post(
   '/',
-  middlewareRateLimit,
   bodyLimit({
     maxSize: Math.max(1, Number(Bun.env.MAX_SUBMISSION_KB) || 100) * 1024,
     onError: c => c.json({ status: false, message: 'Submission too large' }, 413),
   }),
   async c => {
-    let body: unknown;
+    let body: any;
     try {
       body = await c.req.json();
     } catch {
       return c.json({ status: false, message: 'Invalid JSON body' }, 400);
     }
+
+    // rate limit with this form's settings (unknown tokens share one global bucket)
+    const formToken = typeof body?.formToken === 'string' ? body.formToken : '';
+    const lookup = formToken ? await Globals.ctrlForm.getByToken({ formToken }) : null;
+    const form = (lookup?.status ? lookup.data : null) as Form | null;
+    const limited = await rateLimit(c, form ? form.token : '*unknown*', Globals.ctrlSettings.effective(form).rateLimit);
+    if (limited) return limited;
+
     const result = await Globals.ctrlRecords.create(body ?? {});
     return c.json(result);
   },

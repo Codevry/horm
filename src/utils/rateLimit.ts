@@ -1,21 +1,20 @@
 import type { Context, Next } from 'hono';
 import { getConnInfo } from 'hono/bun';
 import { redis } from '@/utils/redis.ts';
+import type { RateLimitSettings } from '@/entity/entitySettings.ts';
 
 /**
- * Fixed-window rate limit per client IP for public form submissions.
+ * Fixed-window rate limit per client IP and form for public form submissions.
+ * Limits come from the dashboard settings (global or per form), with
+ * RATE_LIMIT_MAX / RATE_LIMIT_WINDOW as the initial defaults.
  *
- *   RATE_LIMIT_MAX     submissions allowed per window (default 10, 0 disables)
- *   RATE_LIMIT_WINDOW  window length in seconds (default 60)
- *   TRUST_PROXY        "true" when running behind a reverse proxy (Coolify / Traefik / nginx):
- *                      the client IP is then read from X-Forwarded-For
+ *   TRUST_PROXY  "true" when running behind a reverse proxy (Coolify / Traefik / nginx):
+ *                the client IP is then read from X-Forwarded-For
  *
  * Counters live in redis when REDIS_URL is set (shared by every app instance),
  * otherwise in memory. If redis is unreachable requests are let through.
  */
 
-const max = Number(Bun.env.RATE_LIMIT_MAX ?? 10);
-const windowMs = Math.max(1, Number(Bun.env.RATE_LIMIT_WINDOW ?? 60)) * 1000;
 const trustProxy = Bun.env.TRUST_PROXY === 'true';
 
 interface Hit {
@@ -30,7 +29,7 @@ setInterval(() => {
   for (const [key, entry] of memory) if (entry.reset <= now) memory.delete(key);
 }, 60_000).unref();
 
-function hitMemory(key: string): Hit {
+function hitMemory(key: string, windowMs: number): Hit {
   const now = Date.now();
   let entry = memory.get(key);
   if (!entry || entry.reset <= now) memory.set(key, (entry = { count: 0, reset: now + windowMs }));
@@ -38,7 +37,7 @@ function hitMemory(key: string): Hit {
   return { count: entry.count, resetMs: entry.reset - now };
 }
 
-async function hitRedis(key: string): Promise<Hit> {
+async function hitRedis(key: string, windowMs: number): Promise<Hit> {
   const count = await redis!.incr(key);
   let ttl = await redis!.pttl(key);
   // first hit of the window (or a key that lost its expiry): start the window
@@ -68,24 +67,28 @@ export function clientIp(c: Context): string {
   }
 }
 
-export default async (c: Context, next: Next) => {
-  if (!(max > 0)) return next();
+/**
+ * count one submission for (form, client IP); returns a 429 response when over the limit
+ */
+export async function rateLimit(c: Context, scope: string, limit: RateLimitSettings): Promise<Response | null> {
+  if (!(limit.max > 0)) return null;
 
-  const key = `horm:ratelimit:records:${clientIp(c)}`;
+  const windowMs = limit.window * 1000;
+  const key = `horm:ratelimit:records:${scope}:${limit.window}:${clientIp(c)}`;
   let hit: Hit;
   try {
-    hit = redis ? await hitRedis(key) : hitMemory(key);
+    hit = redis ? await hitRedis(key, windowMs) : hitMemory(key, windowMs);
   } catch (error: any) {
     console.error('[RateLimit] store unavailable, allowing request:', error.message);
-    return next();
+    return null;
   }
 
   const resetSeconds = Math.max(1, Math.ceil(hit.resetMs / 1000));
-  c.header('RateLimit-Limit', String(max));
-  c.header('RateLimit-Remaining', String(Math.max(0, max - hit.count)));
+  c.header('RateLimit-Limit', String(limit.max));
+  c.header('RateLimit-Remaining', String(Math.max(0, limit.max - hit.count)));
   c.header('RateLimit-Reset', String(resetSeconds));
 
-  if (hit.count > max) {
+  if (hit.count > limit.max) {
     c.header('Retry-After', String(resetSeconds));
     return c.json(
       {
@@ -96,6 +99,5 @@ export default async (c: Context, next: Next) => {
       429,
     );
   }
-
-  await next();
-};
+  return null;
+}

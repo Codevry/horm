@@ -93,6 +93,7 @@ export function formRecordsView(
       <a class="btn" href="/dashboard/forms/${token}/export?format=json" download>${icon('download')}JSON</a>`
           : ''
       }
+      <a class="btn" href="/dashboard/forms/${token}/settings">${icon('sliders')}Settings</a>
       <form method="POST" action="/dashboard/forms/${token}/toggle">
         <button type="submit" class="btn">${form.isActive ? `${icon('pause')}Pause form` : `${icon('play')}Resume form`}</button>
       </form>

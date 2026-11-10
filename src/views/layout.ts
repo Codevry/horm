@@ -68,6 +68,9 @@ export function layout(title: string, body: string, nav: { forms: NavForm[]; act
       <a class="rail-link" href="/dashboard"${nav.active === 'forms' ? ' aria-current="page"' : ''}>
         ${icon('inbox')}<span class="label">All forms</span>
       </a>
+      <a class="rail-link" href="/dashboard/settings"${nav.active === 'settings' ? ' aria-current="page"' : ''}>
+        ${icon('sliders')}<span class="label">Settings</span>
+      </a>
     </div>
     ${
       nav.forms.length

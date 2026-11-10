@@ -31,7 +31,7 @@ export default class CtrlRecords {
       const record = { ...toRecord(row), form: token };
 
       // trigger notification
-      enqueueRecordNotifications(record, form.data).catch(error =>
+      enqueueRecordNotifications(record, form.data!).catch(error =>
         console.error('[Queue] failed to queue notification:', error.message),
       );
 
