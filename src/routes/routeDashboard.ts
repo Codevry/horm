@@ -99,6 +99,12 @@ const ASSETS: Record<string, string> = {
   'app.css': 'text/css; charset=utf-8',
   'fonts/instrument-sans.woff2': 'font/woff2',
   'fonts/jetbrains-mono.woff2': 'font/woff2',
+  'icons/icon.svg': 'image/svg+xml',
+  'icons/icon-32.png': 'image/png',
+  'icons/icon-192.png': 'image/png',
+  'icons/icon-512.png': 'image/png',
+  'icons/apple-touch-icon.png': 'image/png',
+  'icons/site.webmanifest': 'application/manifest+json',
 };
 
 app.get('/assets/*', c => {

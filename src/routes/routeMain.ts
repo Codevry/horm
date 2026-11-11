@@ -24,6 +24,14 @@ export default class RouteMain {
         message: 'Server is running',
       });
     });
+
+    // browsers request /favicon.ico on their own; serve the app icon
+    this.app.get('/favicon.ico', c =>
+      c.body(Bun.file(new URL('../views/assets/icons/icon-32.png', import.meta.url)).stream(), 200, {
+        'Content-Type': 'image/png',
+        'Cache-Control': 'public, max-age=86400',
+      }),
+    );
   }
 
   /**
