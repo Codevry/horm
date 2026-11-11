@@ -24,8 +24,10 @@ const PAGE_SIZE = 50;
 
 const app = new Hono();
 
-// reject cross-origin form posts (cookie is SameSite=Strict as well)
-app.use(csrf());
+// reject cross-origin form posts (cookie is SameSite=Strict as well).
+// compare against the public origin: behind a TLS-terminating proxy (Coolify / Traefik)
+// the app sees http:// while the browser sends Origin: https://
+app.use(csrf({ origin: (origin, c) => origin === publicOrigin(c) || origin === new URL(c.req.url).origin }));
 
 const cookieOptions = (c: Context) => ({
   path: '/dashboard',
