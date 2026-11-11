@@ -17,8 +17,9 @@ services:
     environment:
       - SERVICE_FQDN_APP_9988
       - NODE_ENV=production
-      # required: admin token for the dashboard and API (min 16 chars)
-      - ADMIN_TOKEN=${ADMIN_TOKEN:?ADMIN_TOKEN is required}
+      # required: admin token for the dashboard and API (min 16 chars).
+      # Not enforced here (that would break Coolify builds); the app exits on start if missing.
+      - ADMIN_TOKEN=${ADMIN_TOKEN:-}
       - PORT=9988
       - SQLITE_PATH=/app/data/horm.sqlite
       - REDIS_URL=redis://default:${SERVICE_PASSWORD_REDIS:-horm}@redis:6379
