@@ -33,6 +33,11 @@ function document(title: string, body: string) {
   <title>${escapeHtml(title)} · Horm</title>
   <link rel="preload" href="/dashboard/assets/fonts/instrument-sans.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="/dashboard/assets/app.css" />
+  <link rel="icon" href="/dashboard/assets/icons/icon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/dashboard/assets/icons/icon-32.png" type="image/png" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/dashboard/assets/icons/apple-touch-icon.png" />
+  <link rel="manifest" href="/dashboard/assets/icons/site.webmanifest" />
+  <meta name="theme-color" content="#c23f24" />
 </head>
 <body>
 ${body}
