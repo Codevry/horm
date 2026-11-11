@@ -115,6 +115,36 @@ export default class CtrlRecords {
   }
 
   /**
+   * delete records of a form by id (ids belonging to other forms are ignored)
+   */
+  delete(body: { formToken?: string; ids?: unknown[] }) {
+    try {
+      const token = body.formToken;
+      if (!token) throw new Error('formToken is required');
+
+      const ids = [...new Set((body.ids ?? []).map(Number).filter(id => Number.isInteger(id) && id > 0))];
+      if (ids.length === 0) throw new Error('ids are required');
+      if (ids.length > 500) throw new Error('at most 500 records can be deleted at once');
+
+      const { changes } = Globals.db
+        .query(`DELETE FROM records WHERE formToken = ? AND id IN (${ids.map(() => '?').join(',')})`)
+        .run(token, ...ids);
+
+      return {
+        status: true,
+        message: `${changes} record${changes === 1 ? '' : 's'} deleted`,
+        data: { deleted: changes },
+      };
+    } catch (error: Error | any) {
+      return {
+        status: false,
+        message: 'Failed to delete records',
+        error: error.message || '',
+      };
+    }
+  }
+
+  /**
    * per-form submission stats: total, last submission and a daily histogram of the last `days` days (UTC)
    */
   stats(days = 14) {

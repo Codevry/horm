@@ -21,7 +21,31 @@ document.addEventListener('click', async e => {
     if (label) label.textContent = 'Copied';
     setTimeout(() => { btn.removeAttribute('data-copied'); if (label) label.textContent = prev; }, 1600);
   } catch {}
-});`;
+});
+
+// ask before destructive submits (button or form with data-confirm)
+document.addEventListener('submit', e => {
+  const msg = (e.submitter && e.submitter.dataset.confirm) || e.target.dataset.confirm;
+  if (msg && !confirm(msg)) e.preventDefault();
+});
+
+// submissions table: select all + "Delete selected" state
+const bulk = document.querySelector('[data-bulk]');
+if (bulk) {
+  const boxes = () => [...document.querySelectorAll('input[name="ids"][form="' + bulk.getAttribute('id') + '"]')];
+  const all = document.querySelector('[data-select-all]');
+  const sync = () => {
+    const n = boxes().filter(b => b.checked).length;
+    bulk.querySelector('[data-bulk-submit]').disabled = n === 0;
+    bulk.querySelector('[data-bulk-count]').textContent = n ? n + ' selected' : 'Select submissions to delete them';
+    if (all) { all.checked = n > 0 && n === boxes().length; all.indeterminate = n > 0 && n < boxes().length; }
+  };
+  document.addEventListener('change', e => {
+    if (e.target === all) boxes().forEach(b => { b.checked = all.checked; });
+    if (e.target === all || e.target.name === 'ids') sync();
+  });
+  sync();
+}`;
 
 function document(title: string, body: string) {
   return `<!DOCTYPE html>

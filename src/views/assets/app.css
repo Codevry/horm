@@ -691,6 +691,62 @@ td.middle {
   color: var(--text-3);
 }
 
+/* selecting / deleting submissions */
+
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+
+.records .pick {
+  width: 1%;
+  padding-right: 0;
+}
+
+.records td.pick {
+  padding-top: 15px;
+}
+
+.records .row-actions {
+  width: 1%;
+  padding: 8px 12px;
+  text-align: right;
+}
+
+.btn-icon {
+  padding: 0;
+  width: 30px;
+  justify-content: center;
+}
+
+.btn-danger-ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-3);
+}
+
+.btn-danger-ghost:hover,
+.btn-danger-ghost:focus-visible {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+/* on mouse devices, show a row's delete button when the row is hovered or focused */
+@media (hover: hover) {
+  .records tbody .btn-danger-ghost {
+    opacity: 0;
+  }
+  .records tbody tr:hover .btn-danger-ghost,
+  .records tbody .btn-danger-ghost:focus-visible {
+    opacity: 1;
+  }
+}
+
 /* pagination */
 
 .pager {

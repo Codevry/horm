@@ -66,8 +66,13 @@ export function formRecordsView(
   stats: FormStats,
   start: Date,
   origin: string,
+  opts: { deleted?: number } = {},
 ) {
   const token = encodeURIComponent(form.token);
+  const pageHref = `/dashboard/forms/${token}${pagination.page > 1 ? `?page=${pagination.page}` : ''}`;
+  const flash = opts.deleted
+    ? `<p class="flash" role="status">${icon('check')}Deleted ${plural(opts.deleted, 'submission')}</p>`
+    : '';
 
   const head = `
   <a class="back" href="/dashboard">${icon('arrowLeft')}All forms</a>
@@ -80,6 +85,7 @@ export function formRecordsView(
     </div>
     ${stats.total ? `<div class="head-intake hide-sm" title="Submissions per day, last ${stats.daily.length} days">${intakeStrip(stats, start)}</div>` : ''}
     <div class="actions">
+      <a class="btn" href="${pageHref}" title="Load new submissions">${icon('refresh')}Reload</a>
       ${
         records.length
           ? `<a class="btn" href="/dashboard/forms/${token}/export?format=csv" download>${icon('download')}CSV</a>
@@ -95,6 +101,7 @@ export function formRecordsView(
 
   if (records.length === 0)
     return `${head}
+  ${flash}
   ${integration(form, origin, true)}
   <section class="panel empty">
     <h2>No submissions yet</h2>
@@ -112,21 +119,33 @@ export function formRecordsView(
   const rows = records
     .map(
       r => `<tr>
+        <td class="pick"><input type="checkbox" name="ids" value="${r.id}" form="records-delete" aria-label="Select submission from ${escapeHtml(formatDateTime(r.createdAt))}" /></td>
         <td class="when"><time datetime="${r.createdAt.toISOString()}" title="${escapeHtml(formatDateTime(r.createdAt))}">${relativeTime(r.createdAt)}</time></td>
         ${keys.map(k => `<td>${renderCell(r.data?.[k])}</td>`).join('')}
+        <td class="row-actions"><button type="submit" form="records-delete" name="id" value="${r.id}" class="btn btn-sm btn-icon btn-danger-ghost"
+          data-confirm="Delete this submission? This can't be undone." title="Delete submission" aria-label="Delete submission">${icon('trash')}</button></td>
       </tr>`,
     )
     .join('');
 
   return `${head}
+  ${flash}
   ${integration(form, origin, false)}
   <section class="panel">
+    <form id="records-delete" method="POST" action="/dashboard/forms/${token}/records/delete" class="bulk-bar" data-bulk>
+      <input type="hidden" name="page" value="${pagination.page}" />
+      <span class="muted" data-bulk-count>Select submissions to delete them</span>
+      <button type="submit" class="btn btn-sm btn-danger" data-bulk-submit disabled
+        data-confirm="Delete the selected submissions? This can't be undone.">${icon('trash')}Delete selected</button>
+    </form>
     <div class="table-wrap">
       <table class="records">
         <thead>
           <tr>
+            <th scope="col" class="pick"><input type="checkbox" data-select-all aria-label="Select all submissions on this page" /></th>
             <th scope="col">Received</th>
             ${keys.map(k => `<th scope="col">${escapeHtml(k)}</th>`).join('')}
+            <th scope="col" class="row-actions"><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>

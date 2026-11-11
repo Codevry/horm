@@ -191,10 +191,16 @@ app.get('/forms/:token', async c => {
   const { forms, start } = await navData();
   const stats = forms.find(f => f.form.token === formToken)!.stats;
   return c.html(
-    layout(form.data!.name, formRecordsView(form.data!, records, pagination, stats, start, baseUrl(c)), {
-      forms,
-      active: formToken,
-    }),
+    layout(
+      form.data!.name,
+      formRecordsView(form.data!, records, pagination, stats, start, baseUrl(c), {
+        deleted: Number(c.req.query('deleted')) || 0,
+      }),
+      {
+        forms,
+        active: formToken,
+      },
+    ),
   );
 });
 
@@ -314,6 +320,27 @@ app.post('/forms/:token/settings', async c => {
 
   Globals.ctrlSettings.setForm(formToken, settings);
   return c.redirect(`/dashboard/forms/${encodeURIComponent(formToken)}/settings?saved=1`);
+});
+
+// delete submissions: a row's own delete button sends `id`, the bulk button sends the checked `ids`
+app.post('/forms/:token/records/delete', async c => {
+  const formToken = c.req.param('token');
+  const form = await Globals.ctrlForm.getByToken({ formToken });
+  if (!form.status) return errorPage(c, 'Form not found', 'This form may have been deleted.', 404);
+
+  const body = await c.req.parseBody({ all: true });
+  const list = (v: unknown) => (v === undefined ? [] : Array.isArray(v) ? v : [v]);
+  const ids = body.id !== undefined ? list(body.id) : list(body.ids);
+  const back = (query: string) => {
+    const pageNo = Number(body.page);
+    const pageQuery = Number.isInteger(pageNo) && pageNo > 1 ? `page=${pageNo}&` : '';
+    return c.redirect(`/dashboard/forms/${encodeURIComponent(formToken)}?${pageQuery}${query}`);
+  };
+  if (ids.length === 0) return back('');
+
+  const result = Globals.ctrlRecords.delete({ formToken, ids });
+  if (!result.status) return errorPage(c, "Couldn't delete submissions", result.error || 'Please try again.', 500);
+  return back(`deleted=${result.data!.deleted}`);
 });
 
 // delete form (and its submissions)
